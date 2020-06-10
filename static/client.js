@@ -15,7 +15,7 @@ function registerName(){
 	}
 	
 	socket.emit("new player", name, function(success){
-		console.log("success",success);
+		console.log("Name registration success:",success);
 		if(!success){
 			alert("'"+name+"' is taken. Please choose another");
 			registerName();

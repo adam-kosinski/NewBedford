@@ -33,7 +33,11 @@ class Player {
 		this.name = name;
 		this.connected = true;
 		
+		this.first_player = false; //if you're first player this round
+		this.current_player = false; //if it's your turn
+		
 		this.ships = [new Ship(), new Ship()];
+		this.workers_left = 2;
 		this.food = 0;
 		this.wood = 0;
 		this.bricks = 0;
@@ -48,10 +52,31 @@ class Player {
 class Ship {
 	constructor(){
 		this.prepared = false; //if prepared and on the dock
-		this.distance = 0; //how far out to sea it is
+		this.distance = -1; //how far out to sea it is, -1 is not out at sea, 0 is returning
+		this.priority = 1; //1, 2, or 3
 		this.right_whales = 0;
 		this.bowhead_whales = 0;
 		this.sperm_whales = 0;
+	}
+}
+
+class Building {
+	constructor(name, in_town, first, normal){ //in_town is a bool, first and normal are functions to run when workers are placed here
+		this.name = name;
+		this.in_town = name;
+		this.first = first;
+		this.normal = normal;
+		this.workers = 0;
+		this.owner = undefined;
+	}
+	placeWorker(name){
+		this.workers++;
+		if(this.workers == 1){
+			this.first();
+		}
+		else {
+			this.normal();
+		}
 	}
 }
 
@@ -71,7 +96,7 @@ class Ocean { //TODO: fix counts
 			console.log("Invalid number of players ("+n_players+") for initializing the ocean");
 		}
 	}
-	draw = function(n){ //n is number of tokens to draw. Returns an array of whale names / "water"
+	draw_tokens(n_tokens){
 		
 	}
 }
@@ -84,18 +109,29 @@ class Game {
 		
 		this.ocean = new Ocean(this.players.length);
 		this.whaling_result = [];
+		
+		this.buildings = []; //contains town and player buildings. TODO: add town buildings
+		this.unbuilt = [];
 	}
-	nextTurn = function(){ //called from the end_turn socket below
+	nextTurn(){ //called from the end_turn event below
 		
 	}
-	movementPhase = function(){
+	movementPhase(show_banner=true){
+		//tell sockets to animate the banner indicating the movement phase
+		//set timeout to wait for that to finish
+		//do ships at distance 1 one at a time based on priority
+			//to move ship - change vars here, tell sockets to animate certain ships
+			//return if necessary - more complications here
+		//do ships at distance 2+ all at once
+	}
+	whalingPhase(){
 		
 	}
-	whalingPhase = function(){
-		
+	nextRound(){
+		//remember to clear workers from buildings
 	}
-	nextRound = function(){
-		
+	returnAllShips(){
+		//do movement phase a bunch - w/o movement phase banner though
 	}
 }
 
@@ -105,7 +141,7 @@ let players = {}; //holds Player objects, keys are player names (not socket ids)
 let id_to_name = {}; //maps socket ids to names. If a name isn't in here, player is disconnected
 
 let game = undefined; //defined in the start_game event below
-
+let buildings = {}; //holds Building objects, keys are building names. Populated in a separate module when app starts
 
 // Add the WebSocket handlers
 io.on("connection", function(socket) {
@@ -130,32 +166,41 @@ io.on("connection", function(socket) {
 		}
 	});
 	
-	//remove player when they leave
+	//mark player as disconnected when they leave
 	socket.on("disconnect", function(){
 		if(id_to_name.hasOwnProperty(socket.id)){
-			console.log(player.name+" disconnected (id: " + socket.id + ")");
+			console.log(id_to_name[socket.id]+" disconnected (id: " + socket.id + ")");
 			let player = players[id_to_name[socket.id]];
 			player.connected = false;
 			delete id_to_name[socket.id];
 		}
 	});
 	
+	//remove player from memory if player says to
 	socket.on("remove_player", function(){
 		if(id_to_name.hasOwnProperty(socket.id)){
 			console.log(id_to_name[socket.id]+" was removed from the player list (id: " + socket.id + ")");
 			delete players[id_to_name[socket.id]];
 			delete id_to_name[socket.id];
 		}
-	}
+	});
 	
 	socket.on("start_game", function(){
-		//consider putting players in a room?
+		//consider putting players in a room? - prob. not, I'll have spectator players for now
 		//consider having a moderator who advances through the phases?
 		//all connected players are entered into the game - have a check for the required 2-4 players
 		
 	});
 	
+	socket.on("initial_resources", function(){
+		
+	});
+	
 	socket.on("place_worker", function(place){ //place is a string
+		
+	});
+	
+	socket.on("build", function(building){ //building is a string
 		
 	});
 	
@@ -173,6 +218,6 @@ io.on("connection", function(socket) {
 /*
 Notes
 Consider putting the Game class in a separate module?
-
+Put building definitions in a separate module
 
 */

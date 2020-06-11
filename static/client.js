@@ -30,3 +30,19 @@ socket.on("connect", function(){
 	console.log("My ID: "+socket.id);
 	id = socket.id;
 });
+
+
+socket.on("state", function(state){
+	
+});
+
+
+socket.on("state", function(state){
+	
+});
+
+
+socket.on("banner", function(message){
+	
+});
+

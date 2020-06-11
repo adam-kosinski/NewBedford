@@ -1,0 +1,62 @@
+html, body {
+	margin: 0;
+	position: relative;
+}
+
+body * {
+	position: absolute;
+	font-family: 
+}
+
+
+/* home screen ----------------------------------*/
+#home_screen {
+	width: 100vw;
+	height: 100vh;
+	background-color: lightblue;
+	z-index: 5;
+}
+
+#home_screen * {
+	left: 0;
+	right: 0;
+	margin: auto;
+	text-align: center;
+}
+
+#player_display {
+	background-color: white;
+	width: 80vw;
+	height: 20vh;
+	top: 60vh;
+}
+
+#player_display div {
+	position: relative;
+	width: 100px;
+	border: 1px solid gray;
+	padding: 5px;
+	display: inline-block;
+	margin: 10px;
+}
+
+#start_button {
+	width: 200px;
+	font-size: 24px;
+	top: 85vh;
+}
+
+/* game misc ---------------------------------------------*/
+
+/* game left panel ----------------------------------------*/
+
+
+/* game right panel (board) --------------------------------*/
+
+#town {
+	width: 400px;
+}
+
+.building {
+	width: 100px;
+}

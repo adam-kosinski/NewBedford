@@ -32,6 +32,7 @@ class Player {
 	constructor(name){
 		this.name = name;
 		this.connected = true;
+		this.color = undefined; //defined at game start
 		
 		this.first_player = false; //if you're first player this round
 		this.current_player = false; //if it's your turn
@@ -61,7 +62,7 @@ class Ship {
 }
 
 class Building {
-	constructor(name, in_town, first, normal){ //in_town is a bool, first and normal are functions to run when workers are placed here
+	constructor(name, in_town, first, normal=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
 		this.name = name;
 		this.in_town = name;
 		this.first = first;
@@ -110,8 +111,8 @@ class Game {
 		this.ocean = new Ocean(this.players.length);
 		this.whaling_result = [];
 		
-		this.buildings = []; //contains town and player buildings. TODO: add town buildings
-		this.unbuilt = [];
+		this.buildings = []; //contains town and player Building objects. TODO: add town buildings
+		this.unbuilt = []; //unbuilt Building objects
 	}
 	nextTurn(){ //called from the end_turn event below
 		
@@ -162,8 +163,10 @@ io.on("connection", function(socket) {
 		else {
 			console.log(name + " reconnected (id: " + socket.id + ")");
 			id_to_name[socket.id] = name; //add the new mapping
+			players[name].connected = true;
 			callback(true); //successful
 		}
+		io.sockets.emit("player_connection", players);
 	});
 	
 	//mark player as disconnected when they leave
@@ -174,6 +177,7 @@ io.on("connection", function(socket) {
 			player.connected = false;
 			delete id_to_name[socket.id];
 		}
+		io.sockets.emit("player_connection", players);
 	});
 	
 	//remove player from memory if player says to
@@ -188,8 +192,14 @@ io.on("connection", function(socket) {
 	socket.on("start_game", function(){
 		//consider putting players in a room? - prob. not, I'll have spectator players for now
 		//consider having a moderator who advances through the phases?
-		//all connected players are entered into the game - have a check for the required 2-4 players
+		//check for the required 2-4 players
+		console.log("starting game");
 		
+		let game_players = Object.keys(players);
+		if(game_players.length > 4){game_players.splice(4);} //double check 4 players max
+		game = new Game(game_players);
+		
+		io.sockets.emit("start_game", players, game);
 	});
 	
 	socket.on("initial_resources", function(){
@@ -214,6 +224,12 @@ io.on("connection", function(socket) {
 });
 
 
+function clearGame(){
+	
+}
+
+
+game = new Game(["fluffet","penguin"]);
 
 /*
 Notes

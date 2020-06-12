@@ -196,11 +196,18 @@ io.on("connection", function(socket) {
 	socket.on("start_game", function(){
 		//consider putting players in a room? - prob. not, I'll have spectator players for now
 		//consider having a moderator who advances through the phases?
-		//check for the required 2-4 players
 		console.log("starting game");
 		
-		let game_players = Object.keys(players);
+		let game_players = Object.keys(players).filter(name => players[name].connected);
 		if(game_players.length > 4){game_players.splice(4);} //double check 4 players max
+		
+		//give players colors
+		let colors = ["green","orange","blue","yellow"];
+		for(i in game_players){
+			let name = game_players[i];
+			players[name].color = colors.pop();
+		}
+		
 		game = new Game(game_players);
 		
 		io.sockets.emit("start_game", players, game);
@@ -237,5 +244,5 @@ function clearGame(){
 Notes
 Put building definitions in a separate module
 Make spectator (late) connection work better - low priority
-
+Currently easy to mistype your name when reentering, make that better
 */

@@ -7,3 +7,7 @@ start_button.addEventListener("click", function(){
 		socket.emit("start_game");
 	}
 });
+
+document.addEventListener("click", function(e){
+	console.log(e.pageX, e.pageY);
+});

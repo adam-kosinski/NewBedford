@@ -5,6 +5,7 @@ html, body {
 
 body * {
 	position: absolute;
+	font-family: sans-serif;
 }
 
 
@@ -52,29 +53,175 @@ body * {
 	display: none;
 }
 
-/* game left panel ----------------------------------------*/
-#left_panel {
-	width: 400px;
-	height: 100vh;
-	background-color: antiquewhite;
-	border-right: 3px solid saddlebrown;
-	position: fixed;
+.worker {
+	height: 30px;
+}
+
+.small_ship {
+	height: 25px;
+}
+
+.big_ship {
+	height: 35px;
+}
+
+/* game player boards ----------------------------------------*/
+#player_board_scroller {
 	z-index: 10;
+	height: 100vh;
+	position: fixed;
+	overflow-x: visible;
+	overflow-y: auto;
+	direction: rtl; /*to put scroll bar on right*/
+}
+#player_board_scroller * {
+	direction: ltr;
+}
+#player_board_container {
+	position: relative;
 }
 
 .player_board {
 	position: relative;
+	background-color: antiquewhite;
+	width: 225px;
+	height: 125px;
+	margin-bottom: 80px; /*for misc items box + gap*/
 }
 
-.player_board img {
+.player_board .name_display {
+	margin: auto;
+	font-size: 18px;
+	font-weight: bold;
+	text-align: center;
+	
+	width: 125px; /*same as img height*/
+	bottom: 0;
+	right: 25px;
+	transform-origin: bottom right;
+	transform: rotate(90deg);
+
+}
+
+.player_board .player_board_img {
+	width: 200px;
+	position: relative;
+}
+
+.player_board .misc_items {
+	height: 50px;
+	width: 80%;
+	bottom: -50px;
+}
+
+.player_board .misc_items * {
+	top: 0;
+	bottom: 0;
+	margin: auto;
+}
+
+.player_board .first_player_token_spot {
+	left: 80%;
+	top: 100%;
+	padding: 5px;
+}
+
+.player_board table * {
+	padding: 0;
+	position: relative;
+}
+
+.player_board .resource_table {
+	top: 12px;
+	left: 3px;
+}
+
+.player_board .resource {
+	font-size: 14px;
+	text-align: center;
+	margin: 0;
+	width: 19px;
+}
+
+.player_board table.returned_counters {
+	border-spacing: 1px;
+	left: 3px;
+	top: 88px;
+}
+
+.player_board table.small_ship_counters {
+	border-spacing: 3px;
+	top: 15px;
+	left: 98px;
+}
+
+.player_board table.big_ship_counters {
+	border-spacing: 3px;
+	top: 85px;
+	left: 98px;
+}
+
+.player_board .whale_counter {
+	font-size: 14px;
+	line-height: 25px;
+	color: white;
+	text-align: center;
+	width: 27px;
+	height: 27px;
+	background-size: contain;
+}
+
+#my_player_board {
+	width: 345px;
+	height: 200px;
+}
+#my_player_board .player_board_img {
 	width: 320px;
 }
+#my_player_board .name_display {
+	width: 200px; /*same as img height*/
+}
+#my_player_board .resource_table {
+	top: 19px;
+	left: 11px;
+}
+#my_player_board .resource {
+	font-size: 18px;
+	width: 30px;
+}
+#my_player_board table.returned_counters {
+	border-spacing: 3px;
+	left: 5px;
+	top: 140px;
+}
+#my_player_board table.small_ship_counters {
+	border-spacing: 6px;
+	left: 155.5px;
+	top: 24px;
+}
+#my_player_board table.big_ship_counters {
+	border-spacing: 6px;
+	left: 156px;
+	top: 135px;
+}
+#my_player_board .whale_counter {
+	font-size: 18px;
+	line-height: 40px;
+	width: 42px;
+	height: 42px;
+}
 
-/* game right panel (board) --------------------------------*/
+
+#first_player_token {
+	height: 40px;
+}
+
+
+/* game board --------------------------------*/
 
 #board {
 	position: absolute;
-	left: 400px;
+	left: 225px; /*to clear the player boards*/
 }
 
 #town {

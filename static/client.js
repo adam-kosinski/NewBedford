@@ -20,9 +20,6 @@ function registerName(){
 			alert("'"+name+"' is taken. Please choose another");
 			registerName();
 		}
-		else {
-			init(); //see init.js
-		}
 	});
 }
 
@@ -33,6 +30,19 @@ socket.on("connect", function(){
 	console.log("My ID: "+socket.id);
 	id = socket.id;
 });
+
+
+//check if a game is going on
+socket.emit("get_state", function(players, game){
+	if(game){
+		game_active = true;
+		init_game_display(players, game); //see init.js
+	}
+	else {
+		home_screen.style.display = "block";
+	}
+});
+
 
 //socket event handlers
 
@@ -55,12 +65,13 @@ socket.on("player_connection", function(players){
 });
 
 socket.on("start_game", function(players, game){
-	start_game(players, game); //see init.js
+	game_active = true;
+	init_game_display(players, game); //see init.js
 });	
 
 
-socket.on("state", function(state){
-	console.log(state);
+socket.on("state", function(players, game){
+	console.log(players, game);
 });
 
 

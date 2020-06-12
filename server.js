@@ -141,7 +141,7 @@ class Game {
 let players = {}; //holds Player objects, keys are player names (not socket ids)
 let id_to_name = {}; //maps socket ids to names. If a name isn't in here, player is disconnected
 
-let game = undefined; //defined in the start_game event below
+let game = undefined; //undefined means no game currently going on
 let buildings = {}; //holds Building objects, keys are building names. Populated in a separate module when app starts
 
 // Add the WebSocket handlers
@@ -189,6 +189,10 @@ io.on("connection", function(socket) {
 		}
 	});
 	
+	socket.on("get_state", function(callback){
+		callback(players, game); //if game is undefined, tells them no game currently happening
+	});
+	
 	socket.on("start_game", function(){
 		//consider putting players in a room? - prob. not, I'll have spectator players for now
 		//consider having a moderator who advances through the phases?
@@ -229,11 +233,9 @@ function clearGame(){
 }
 
 
-game = new Game(["fluffet","penguin"]);
-
 /*
 Notes
-Consider putting the Game class in a separate module?
 Put building definitions in a separate module
+Make spectator (late) connection work better - low priority
 
 */

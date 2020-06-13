@@ -41,7 +41,7 @@ class Player {
 		this.workers_left = 2;
 		this.food = 0;
 		this.wood = 0;
-		this.bricks = 0;
+		this.brick = 0;
 		this.money = 0;
 		
 		this.right_whales = 0;
@@ -244,5 +244,7 @@ function clearGame(){
 Notes
 Put building definitions in a separate module
 Make spectator (late) connection work better - low priority
-Currently easy to mistype your name when reentering, make that better
+Currently easy to mistype your name when reentering, make that better - low priority
+For the take() function (update.js), consider making background of the counters go red briefly then fade back to normal
+ - better idea: make the resource go to the building where they're being used, similar animation to the give() function
 */

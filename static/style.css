@@ -1,3 +1,17 @@
+/* z-index table
+#home_screen - 20
+
+#game_div
+	#player_scroll_wrapper - 10
+		.animated_resource - 15
+		.player_board .disconnected - 10
+
+	.animated_resource - 15
+
+	.building - 5
+*/
+
+
 html, body {
 	margin: 0;
 	position: relative;
@@ -65,20 +79,35 @@ body * {
 	height: 35px;
 }
 
+.animated_resource {
+	width: 30px;
+	transform: translate(-50%, -50%); /*to center it*/
+	z-index: 15;
+}
+
+.selectable:hover {
+	box-shadow: 0 0 10px 5px yellow; /*x-offset, y-offset, blur-radius, spread, color*/
+	cursor: pointer;
+}
+
 /* game player boards ----------------------------------------*/
-#player_board_scroller {
-	z-index: 10;
-	height: 100vh;
+#player_scroll_wrapper {
 	position: fixed;
-	overflow-x: visible;
-	overflow-y: auto;
+	z-index: 10;
+	background-color: rgba(255,255,255,0.5);
+}
+
+#player_board_scroller {
+	height: 100vh;
+	position: static;
+	overflow: auto;
 	direction: rtl; /*to put scroll bar on right*/
 }
 #player_board_scroller * {
 	direction: ltr;
 }
 #player_board_container {
-	position: relative;
+	position: static;
 }
 
 .player_board {
@@ -87,6 +116,11 @@ body * {
 	width: 225px;
 	height: 125px;
 	margin-bottom: 80px; /*for misc items box + gap*/
+}
+
+.player_board .player_board_img {
+	width: 200px;
+	position: relative;
 }
 
 .player_board .name_display {
@@ -103,9 +137,17 @@ body * {
 
 }
 
-.player_board .player_board_img {
-	width: 200px;
-	position: relative;
+.player_board .disconnected {
+	display: none;
+	width: 225px;
+	height: 125px;
+	background-color: rgba(0,0,0,0.5);
+	color: white;
+	font-size: 18px;
+	text-align: center;
+	line-height: 125px;
+	top: 0;
+	z-index: 10;
 }
 
 .player_board .misc_items {
@@ -181,6 +223,12 @@ body * {
 #my_player_board .name_display {
 	width: 200px; /*same as img height*/
 }
+#my_player_board .disconnected {
+	width: 345px;
+	height: 200px;
+	line-height: 200px;
+	font-size: 24px;
+}
 #my_player_board .resource_table {
 	top: 19px;
 	left: 11px;
@@ -225,16 +273,26 @@ body * {
 }
 
 #town {
+	left: 250px;
+	top: 200px;
+}
+#town #town_image {
 	width: 400px;
-	left: 100px;
 }
 
 #ocean {
-	width: 250px;
-	left: 600px;
+	left: 750px;
 	top: 50px;
+}
+#ocean_image {
+	width: 250px;
 }
 
 .building {
-	width: 100px;
+	width: 100px; /*size also defined in globals.js to use for placement calcs*/
+	height: 100px;
+	background-size: cover;
+	border-radius: 5px;
+	/*border: 3px solid red;*/
+	z-index: 5;
 }

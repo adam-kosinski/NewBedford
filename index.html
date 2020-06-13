@@ -13,12 +13,18 @@
 		</div>
 		
 		<div id="game_div">
-			<div id="player_board_scroller">
-				<div id="player_board_container"></div>
+			<div id="player_scroll_wrapper">
+				<div id="player_board_scroller">
+					<div id="player_board_container"></div>
+				</div>
 			</div>
 			<div id="board">
-				<img id="town" src="/static/images/town.png"/>
-				<img id="ocean" src="/static/images/ocean.png"/>
+				<div id="town">
+					<img id="town_image" src="/static/images/town.png"/>
+				</div>
+				<div id="ocean">
+					<img id="ocean_image" src="/static/images/ocean.png"/>
+				</div>
 			</div>
 			
 			<img id="first_player_token" src="/static/images/first_player_token.png"/>
@@ -29,9 +35,10 @@
 		</div>
 		
 		<script src="/static/globals.js"></script>
+		
 		<script src="/static/init.js"></script>
-		<script src="/static/update.js"></script>
 		<script src="/static/animate.js"></script>
+		<script src="/static/update.js"></script>
 		<script src="/static/events.js"></script>
 		
 		<script src="/static/client.js"></script>

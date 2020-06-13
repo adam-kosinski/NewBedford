@@ -12,30 +12,57 @@ function init_game_display(players, game){
 			ordered_game_players.push(ordered_game_players.splice(0,1));
 		}
 	}
-	
-	console.log("ordered",ordered_game_players);
-	
+		
 	//create player boards
 	for(let p=0; p<ordered_game_players.length; p++){
 		let name = ordered_game_players[p];
 		let first_player = game.players[0] == name;
-		let player_board = new PlayerBoard(name, players[name].color, first_player);
-		player_boards[name] = player_board;
+		let player_board = new PlayerBoard(name, players[name], first_player);
 	}
 	
 	
+	//set up town and ocean with Building objects
 	
-	town.style.top = (window.innerHeight-400)/2 + "px";
-	town.style.top = "500px";
+	let general_store = new Building("general_store", 90, 120);
+	general_store.div.style.left = "104px";
+	general_store.div.style.top = "5px";
+	town.appendChild(general_store.div);
+	
+	let warehouse = new Building("warehouse", 90, 120);
+	warehouse.setPosition(200, 275);
+	town.appendChild(warehouse.div);
+	
+	let forest = new Building("forest", 120, 90);
+	forest.setPosition(6, 205);
+	town.appendChild(forest.div);
+	
+	let farm = new Building("farm", 120, 90);
+	farm.setPosition(276, 105);
+	town.appendChild(farm.div);
+	
+	let town_hall = new Building("town_hall", 90, 120);
+	town_hall.setPosition(155, 140);
+	town.appendChild(town_hall.div);
+	
+	let dockyard = new Building("dockyard", 125, 90);
+	ocean.appendChild(dockyard.div);
+	
+	let city_pier = new Building("city_pier", 125, 90);
+	city_pier.setPosition(125, 0);
+	ocean.appendChild(city_pier.div);
+	
+	//town.style.top = (window.innerHeight-400)/2 + "px";
 	home_screen.style.display = "none";
 	game_div.style.display = "block";
 }
 
 
 
+
 class PlayerBoard {
-	constructor(name, color, first_player){
+	constructor(name, state, first_player){
 		this.name = name;
+		this.color = state.color;
 		
 		this.div = document.createElement("div");
 		this.div.className = "player_board";
@@ -51,6 +78,11 @@ class PlayerBoard {
 		this.image.className = "player_board_img";
 		this.div.appendChild(this.image);
 		
+		this.disconnected_div = document.createElement("div"); //div shown if a player disconnects
+		this.disconnected_div.className = "disconnected";
+		this.disconnected_div.textContent = "Disconnected";
+		this.div.appendChild(this.disconnected_div);
+		
 		this.misc_items = document.createElement("div");
 		this.misc_items.className = "misc_items";
 		let color_map = {
@@ -59,51 +91,42 @@ class PlayerBoard {
 			blue: "#9999ff",
 			green: "#99ff99"
 		};
-		this.misc_items.style.backgroundColor = color_map[color];
+		this.misc_items.style.backgroundColor = color_map[this.color];
 		this.div.appendChild(this.misc_items);
-		
 		
 		//center locations - w/ respect to top left of player board aka the main image
 		if(name == my_name){
 			this.location = {
-				food: {x: 20, y: 33},
-				wood: {x: 60, y: 33},
-				brick: {x: 100, y: 33},
-				money: {x: 140, y: 33},
+				food: {x: 26, y: 33},
+				wood: {x: 59, y: 33},
+				brick: {x: 92, y: 33},
+				money: {x: 123, y: 33},
 				right_whale: {x: 28, y: 164},
 				bowhead_whale: {x: 72, y: 164},
 				sperm_whale: {x: 116, y: 164},
-				small_ship: {
-					right_whale: {x: 182, y: 50},
-					bowhead_whale: {x: 228, y: 50},
-					sperm_whale: {x: 274, y: 50}
-				},
-				big_ship: {
-					right_whale: {x: 182, y: 160},
-					bowhead_whale: {x: 228, y: 160},
-					sperm_whale: {x: 274, y: 160}
-				}
+				small_ship_right_whale: {x: 182, y: 50},
+				small_ship_bowhead_whale: {x: 228, y: 50},
+				small_ship_sperm_whale: {x: 274, y: 50},
+				big_ship_right_whale: {x: 182, y: 160},
+				big_ship_bowhead_whale: {x: 228, y: 160},
+				big_ship_sperm_whale: {x: 274, y: 160}
 			};
 		}
 		else {
 			this.location = {
 				food: {x: 12, y: 21},
-				wood: {x: 37, y: 21},
-				brick: {x: 62, y: 21},
-				money: {x: 87, y: 21},
+				wood: {x: 34, y: 21},
+				brick: {x: 55, y: 21},
+				money: {x: 76, y: 21},
 				right_whale: {x: 17, y: 101},
 				bowhead_whale: {x: 45, y: 101},
 				sperm_whale: {x: 72, y: 101},
-				small_ship: {
-					right_whale: {x: 113, y: 30},
-					bowhead_whale: {x: 142, y: 30},
-					sperm_whale: {x: 171, y: 30}
-				},
-				big_ship: {
-					right_whale: {x: 113, y: 99},
-					bowhead_whale: {x: 142, y: 99},
-					sperm_whale: {x: 171, y: 99}
-				}
+				small_ship_right_whale: {x: 113, y: 30},
+				small_ship_bowhead_whale: {x: 142, y: 30},
+				small_ship_sperm_whale: {x: 171, y: 30},
+				right_whale: {x: 113, y: 99},
+				bowhead_whale: {x: 142, y: 99},
+				sperm_whale: {x: 171, y: 99}
 			};
 		};
 		
@@ -111,28 +134,28 @@ class PlayerBoard {
 		//workers and ships
 
 		this.worker_1 = document.createElement("img");
-		this.worker_1.src = "/static/images/" + color + "_worker.png";
+		this.worker_1.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_1.className = "worker";
 		this.worker_1.storageOffset = "5px";
 		this.worker_1.style.left = this.worker_1.storageOffset;
 		this.misc_items.appendChild(this.worker_1);
 		
 		this.worker_2 = document.createElement("img");
-		this.worker_2.src = "/static/images/" + color + "_worker.png";
+		this.worker_2.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_2.className = "worker";
 		this.worker_2.storageOffset = "45px";
 		this.worker_2.style.left = this.worker_2.storageOffset;
 		this.misc_items.appendChild(this.worker_2);
 		
 		this.small_ship = document.createElement("img");
-		this.small_ship.src = "/static/images/" + color + "_small_ship.png";
+		this.small_ship.src = "/static/images/" + this.color + "_small_ship.png";
 		this.small_ship.className = "small_ship";
 		this.small_ship.storageOffset = "85px";
 		this.small_ship.style.left = this.small_ship.storageOffset;
 		this.misc_items.appendChild(this.small_ship);
 		
 		this.big_ship = document.createElement("img");
-		this.big_ship.src = "/static/images/" + color + "_big_ship.png";
+		this.big_ship.src = "/static/images/" + this.color + "_big_ship.png";
 		this.big_ship.className = "big_ship";
 		this.big_ship.storageOffset = "125px";
 		this.big_ship.style.left = this.big_ship.storageOffset;
@@ -168,14 +191,14 @@ class PlayerBoard {
 		tbody.appendChild(tr);
 		
 		tr = document.createElement("tr");
-		let counter_names = ["food_counter", "wood_counter", "brick_counter", "money_counter"];
+		let resources = ["food", "wood", "brick", "money"];
 		for(let i=0; i<4; i++){
 			let td = document.createElement("td");
 			td.className = "resource";
 			let p = document.createElement("p");
 			p.className = "resource";
-			p.textContent = "0";
-			this[counter_names[i]] = p;
+			p.textContent = state[resources[i]];
+			this[resources[i] + "_counter"] = p;
 			
 			td.appendChild(p);
 			tr.appendChild(td);
@@ -192,8 +215,6 @@ class PlayerBoard {
 		newWhaleCounterTable("big_ship_counters", "big_ship_", this);
 		
 		
-		
-		
 		//add to DOM
 		if(name == my_name){
 			player_board_container.insertBefore(this.div, player_board_container.firstElementChild);
@@ -201,6 +222,9 @@ class PlayerBoard {
 		else {
 			player_board_container.appendChild(this.div);
 		}
+		
+		//add to references
+		player_boards[name] = this;
 	}
 }
 
@@ -253,4 +277,67 @@ function newWhaleCounterTable(className, prefix, player_board){
 	table.appendChild(tbody);
 	
 	player_board.div.appendChild(table);
+}
+
+
+
+class Building {
+	constructor(name, width, height){
+		//NOTE: if width and height are provided, it is assumed the building is in the town, and no background image is rendered
+		
+		this.div = document.createElement("div");
+		this.div.className = "building";
+		this.div.object = this; //so click handlers can trace from the event target to this object
+		
+		this.location = undefined; //set by setPosition() below
+		this.workers = 0;
+		
+		this.in_town = false;
+		if(width != undefined && height != undefined){
+			this.in_town = true;
+			this.div.style.width = width + "px";
+			this.div.style.height = height + "px";
+		} else {
+			this.div.style.backgroundImage = "url('/static/images/buildings/" + name + ".jpg')";
+		}
+		
+		this.setSelectable(true);
+		
+		//add it
+		board.appendChild(this.div);
+		buildings[name] = this;
+	}
+	
+	setPosition(left, top){ //TODO: decide whether to keep this
+		this.div.style.left = left + "px";
+		this.div.style.top = top + "px";
+	}
+	
+	setSelectable(selectable){ //arg is true/false
+		this.selectable = selectable;
+		if(selectable == true){
+			this.div.className += " selectable";
+		}
+		else {
+			this.div.className = this.div.className.replace("selectable", "");
+		}
+	}
+	
+	clickHandler(){ //TODO: figure this out
+		
+	}
+}
+
+
+
+
+class BuildingArea {
+	constructor(name){ //player name
+		this.name = name;
+		
+		
+		
+		//add to storage
+		building_areas[name] = this;
+	}
 }

@@ -14,7 +14,7 @@ let first_player_token = document.getElementById("first_player_token");
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)
 let buildings = {}; //keys are building names, contains Building objects (see init.js)
 let building_areas = {}; //keys are player names, contains BuildingArea objects (see init.js)
-
+let building_click_handlers = {}; //keys are buildings, contains functions - what to do when the building is clicked (see buildings.js)
 
 //state
 let my_name;
@@ -26,5 +26,10 @@ let game_active = false;
 //config
 let give_animation_speed = 0.3; //pixels/ms
 let time_between_gives = 150; //ms
-let building_width = 100; //px, size also defined in CSS file
+
+//config copied from style.css
+let building_width = 100; //px
 let building_height = 100; //px
+let town_width = 400; //px
+let town_height = 400; //px
+let worker_height = 30; //px

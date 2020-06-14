@@ -62,8 +62,8 @@ class Ship {
 }
 
 class Building {
-	constructor(name, in_town, first, normal=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
-		this.name = name;
+	constructor(type, in_town, first, normal=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
+		this.type = type;
 		this.in_town = name;
 		this.first = first;
 		this.normal = normal;
@@ -111,7 +111,7 @@ class Game {
 		this.ocean = new Ocean(this.players.length);
 		this.whaling_result = [];
 		
-		this.buildings = []; //contains town and player Building objects. TODO: add town buildings
+		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
 	}
 	nextTurn(){ //called from the end_turn event below

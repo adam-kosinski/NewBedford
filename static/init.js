@@ -5,6 +5,13 @@ function init_game_display(players, game){
 	console.log("Initting game display");
 	console.log(players, game);
 	
+	//add town image
+	let town_image= document.createElement("img");
+	town_image.src = "/static/images/town.png";
+	town_image.id = "town_image";
+	town.appendChild(town_image);
+	
+	
 	//cycle the list of players so that my player board is shown first (at the top), but the order is still right
 	let ordered_game_players = game.players.slice();
 	if(ordered_game_players.includes(my_name)){
@@ -17,41 +24,80 @@ function init_game_display(players, game){
 	for(let p=0; p<ordered_game_players.length; p++){
 		let name = ordered_game_players[p];
 		let first_player = game.players[0] == name;
-		let player_board = new PlayerBoard(name, players[name], first_player);
+		new PlayerBoard(name, players[name], first_player);
+	}
+	
+	//create building areas - everyone has the same order for these
+	for(let i=0; i<game.players.length; i++){
+		new BuildingArea(game.players[i]);
 	}
 	
 	
 	//set up town and ocean with Building objects
 	
 	let general_store = new Building("general_store", 90, 120);
-	general_store.div.style.left = "104px";
-	general_store.div.style.top = "5px";
+	general_store.setPosition(104, 5);
+	general_store.addWorkerSlot(9, 35);
+	general_store.addWorkerSlot(55, 35);
+	general_store.addWorkerSlot(9, 73);
+	general_store.addWorkerSlot(55, 73);
 	town.appendChild(general_store.div);
 	
 	let warehouse = new Building("warehouse", 90, 120);
 	warehouse.setPosition(200, 275);
+	warehouse.addWorkerSlot(9, 35);
+	warehouse.addWorkerSlot(55, 35);
+	warehouse.addWorkerSlot(9, 73);
+	warehouse.addWorkerSlot(55, 73);
 	town.appendChild(warehouse.div);
 	
 	let forest = new Building("forest", 120, 90);
 	forest.setPosition(6, 205);
+	forest.addWorkerSlot(46, 45);
+	forest.addWorkerSlot(6, 45);
+	forest.addWorkerSlot(86, 45);
+	forest.addWorkerSlot(66, 10);
 	town.appendChild(forest.div);
 	
 	let farm = new Building("farm", 120, 90);
 	farm.setPosition(276, 105);
+	farm.addWorkerSlot(46, 45);
+	farm.addWorkerSlot(6, 45);
+	farm.addWorkerSlot(86, 45);
+	farm.addWorkerSlot(26, 10);
 	town.appendChild(farm.div);
 	
 	let town_hall = new Building("town_hall", 90, 120);
 	town_hall.setPosition(155, 140);
+	town_hall.addWorkerSlot(9, 35);
+	town_hall.addWorkerSlot(55, 35);
+	town_hall.addWorkerSlot(9, 73);
+	town_hall.addWorkerSlot(55, 73);
 	town.appendChild(town_hall.div);
 	
 	let dockyard = new Building("dockyard", 125, 90);
+	dockyard.addWorkerSlot(30, 37);
+	dockyard.addWorkerSlot(65, 37);
+	dockyard.addWorkerSlot(3, 52);
+	dockyard.addWorkerSlot(93, 52);
 	ocean.appendChild(dockyard.div);
 	
 	let city_pier = new Building("city_pier", 125, 90);
 	city_pier.setPosition(125, 0);
+	city_pier.addWorkerSlot(30, 37);
+	city_pier.addWorkerSlot(64, 37);
+	city_pier.addWorkerSlot(3, 52);
+	city_pier.addWorkerSlot(93, 52);
 	ocean.appendChild(city_pier.div);
 	
-	//town.style.top = (window.innerHeight-400)/2 + "px";
+	
+	//build any buildings already built
+	for(let b=0; b<game.buildings.length; b++){
+		let building = game.buildings[b];
+		building_areas[building.owner].build(building.type);
+	}
+		
+	
 	home_screen.style.display = "none";
 	game_div.style.display = "block";
 }
@@ -68,15 +114,15 @@ class PlayerBoard {
 		this.div.className = "player_board";
 		if(name == my_name){this.div.id = "my_player_board";}
 		
-		this.name_display = document.createElement("p");
-		this.name_display.textContent = name;
-		this.name_display.className = "name_display";
-		this.div.appendChild(this.name_display);
+		let name_display = document.createElement("p");
+		name_display.textContent = name;
+		name_display.className = "name_display";
+		this.div.appendChild(name_display);
 		
-		this.image = document.createElement("img");
-		this.image.src = "/static/images/player_board.png";
-		this.image.className = "player_board_img";
-		this.div.appendChild(this.image);
+		let img = document.createElement("img");
+		img.src = "/static/images/player_board.png";
+		img.className = "player_board_img";
+		this.div.appendChild(img);
 		
 		this.disconnected_div = document.createElement("div"); //div shown if a player disconnects
 		this.disconnected_div.className = "disconnected";
@@ -109,7 +155,11 @@ class PlayerBoard {
 				small_ship_sperm_whale: {x: 274, y: 50},
 				big_ship_right_whale: {x: 182, y: 160},
 				big_ship_bowhead_whale: {x: 228, y: 160},
-				big_ship_sperm_whale: {x: 274, y: 160}
+				big_ship_sperm_whale: {x: 274, y: 160},
+				worker_1: {x: 5, y: 210},
+				worker_2: {x: 45, y: 210},
+				small_ship: {x: 85, y: 213},
+				big_ship: {x: 125, y: 208}
 			};
 		}
 		else {
@@ -126,7 +176,11 @@ class PlayerBoard {
 				small_ship_sperm_whale: {x: 171, y: 30},
 				right_whale: {x: 113, y: 99},
 				bowhead_whale: {x: 142, y: 99},
-				sperm_whale: {x: 171, y: 99}
+				sperm_whale: {x: 171, y: 99},
+				worker_1: {x: 5, y: 135},
+				worker_2: {x: 45, y: 135},
+				small_ship: {x: 85, y: 138},
+				big_ship: {x: 125, y: 133}
 			};
 		};
 		
@@ -136,30 +190,30 @@ class PlayerBoard {
 		this.worker_1 = document.createElement("img");
 		this.worker_1.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_1.className = "worker";
-		this.worker_1.storageOffset = "5px";
-		this.worker_1.style.left = this.worker_1.storageOffset;
-		this.misc_items.appendChild(this.worker_1);
+		this.worker_1.style.left = this.location.worker_1.x + "px";
+		this.worker_1.style.top = this.location.worker_1.y + "px";
+		this.div.appendChild(this.worker_1);
 		
 		this.worker_2 = document.createElement("img");
 		this.worker_2.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_2.className = "worker";
-		this.worker_2.storageOffset = "45px";
-		this.worker_2.style.left = this.worker_2.storageOffset;
-		this.misc_items.appendChild(this.worker_2);
+		this.worker_2.style.left = this.location.worker_2.x + "px";
+		this.worker_2.style.top = this.location.worker_2.y + "px";
+		this.div.appendChild(this.worker_2);
 		
 		this.small_ship = document.createElement("img");
 		this.small_ship.src = "/static/images/" + this.color + "_small_ship.png";
 		this.small_ship.className = "small_ship";
-		this.small_ship.storageOffset = "85px";
-		this.small_ship.style.left = this.small_ship.storageOffset;
-		this.misc_items.appendChild(this.small_ship);
+		this.small_ship.style.left = this.location.small_ship.x + "px";
+		this.small_ship.style.top = this.location.small_ship.y + "px";
+		this.div.appendChild(this.small_ship);
 		
 		this.big_ship = document.createElement("img");
 		this.big_ship.src = "/static/images/" + this.color + "_big_ship.png";
 		this.big_ship.className = "big_ship";
-		this.big_ship.storageOffset = "125px";
-		this.big_ship.style.left = this.big_ship.storageOffset;
-		this.misc_items.appendChild(this.big_ship);
+		this.big_ship.style.left = this.location.big_ship.x + "px";
+		this.big_ship.style.top = this.location.big_ship.y + "px";
+		this.div.appendChild(this.big_ship);
 		
 		
 		//first player token
@@ -216,12 +270,7 @@ class PlayerBoard {
 		
 		
 		//add to DOM
-		if(name == my_name){
-			player_board_container.insertBefore(this.div, player_board_container.firstElementChild);
-		}
-		else {
-			player_board_container.appendChild(this.div);
-		}
+		player_board_container.appendChild(this.div);
 		
 		//add to references
 		player_boards[name] = this;
@@ -277,67 +326,4 @@ function newWhaleCounterTable(className, prefix, player_board){
 	table.appendChild(tbody);
 	
 	player_board.div.appendChild(table);
-}
-
-
-
-class Building {
-	constructor(name, width, height){
-		//NOTE: if width and height are provided, it is assumed the building is in the town, and no background image is rendered
-		
-		this.div = document.createElement("div");
-		this.div.className = "building";
-		this.div.object = this; //so click handlers can trace from the event target to this object
-		
-		this.location = undefined; //set by setPosition() below
-		this.workers = 0;
-		
-		this.in_town = false;
-		if(width != undefined && height != undefined){
-			this.in_town = true;
-			this.div.style.width = width + "px";
-			this.div.style.height = height + "px";
-		} else {
-			this.div.style.backgroundImage = "url('/static/images/buildings/" + name + ".jpg')";
-		}
-		
-		this.setSelectable(true);
-		
-		//add it
-		board.appendChild(this.div);
-		buildings[name] = this;
-	}
-	
-	setPosition(left, top){ //TODO: decide whether to keep this
-		this.div.style.left = left + "px";
-		this.div.style.top = top + "px";
-	}
-	
-	setSelectable(selectable){ //arg is true/false
-		this.selectable = selectable;
-		if(selectable == true){
-			this.div.className += " selectable";
-		}
-		else {
-			this.div.className = this.div.className.replace("selectable", "");
-		}
-	}
-	
-	clickHandler(){ //TODO: figure this out
-		
-	}
-}
-
-
-
-
-class BuildingArea {
-	constructor(name){ //player name
-		this.name = name;
-		
-		
-		
-		//add to storage
-		building_areas[name] = this;
-	}
 }

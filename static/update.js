@@ -13,11 +13,20 @@ function changeParent(object, new_parent){
 }
 
 function getLocation(what, relative_to, name=undefined){
-	//what: anything in PlayerBoard.location, or a building (for which the center of it is returned), or a building plus '_worker'
+	//what: an element, a building (for which the center of it is returned), or anything in PlayerBoard.location
 	//relative_to: top-left of this element is considered (0,0)
 	//name: of player, if in a playerboard
 	
-	if(buildings.hasOwnProperty(what)){
+	if(what instanceof HTMLElement){
+		let box = what.getBoundingClientRect();
+		let relative_to_box = relative_to.getBoundingClientRect();
+		
+		return {
+			x: box.x - relative_to.x,
+			y: box.y - relative_to.y
+		};
+	}
+	else if(buildings.hasOwnProperty(what)){
 		let b = buildings[what];
 		let building_box = buildings[what].div.getBoundingClientRect();
 		let relative_to_box = relative_to.getBoundingClientRect();
@@ -26,9 +35,6 @@ function getLocation(what, relative_to, name=undefined){
 			x: (building_box.x + 0.5*building_box.width) - relative_to_box.x,
 			y: (building_box.y + 0.5*building_box.height) - relative_to_box.y
 		};
-	}
-	else if(false){ //TODO: worker locations
-		
 	}
 	else { //on playerboard
 		let player_board_box = player_boards[name].div.getBoundingClientRect();
@@ -181,13 +187,35 @@ function take(amount, thing, name){
 
 
 
+function moveWorker(name, where){
+	//name: name of player
+	//where: a building, or "player_board" to return it to storage
+	
+	if(where == "player_board"){
+		
+	}
+	else if(buildings.hasOwnProperty(where)){
+		//TODO: actually write this		
+		let worker_slot = buildings[where].getOpenWorkerSlot();
+		
+		worker_slot.appendChild(player_boards[name].worker_1);
+		player_boards[name].worker_1.style.top = "0";
+		player_boards[name].worker_1.style.left = "0";
+	}
+	else {
+		throw new Error("Cannot move worker to " + where +", invalid destination");
+	}
+}
+
+
+
 
 function setTurn(name){ //name of player
 	//indicates whose turn it is in the GUI, disables/enables appropriate things you can click
-	
-	//probably disabling clicking is easiest done with a transparent div that covers the whole screen - can't be fixed, just make it 100%
-	//need to gray out the end turn button etc. to show disabled stuff to the user
-	//don't want to disable everything - keep the build menu, the end game button... so maybe not transparent div
+		
+	//remember not all buildings are selectable (e.g. mansion)
+	//I'm going to have the click event handler check if the building is selectable, only then do the action
+	//check for how many workers are on the building - if it's player owned and there's a worker, don't make it selectable
 }
 
 

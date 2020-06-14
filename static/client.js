@@ -61,11 +61,13 @@ socket.on("player_connection", function(players){
 	//indicate disconnected in game GUI if game active
 	if(game_active){
 		for(name in players){
-			if(players[name].connected){
-				player_boards[name].disconnected_div.style.display = "none";
-			}
-			else {
-				player_boards[name].disconnected_div.style.display = "block";
+			if(player_boards.hasOwnProperty(name)){
+				if(players[name].connected){
+					player_boards[name].disconnected_div.style.display = "none";
+				}
+				else {
+					player_boards[name].disconnected_div.style.display = "block";
+				}
 			}
 		}
 	}

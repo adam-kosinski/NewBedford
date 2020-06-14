@@ -9,6 +9,7 @@
 	.animated_resource - 15
 
 	.building - 5
+	.building:hover - 7
 */
 
 
@@ -156,12 +157,6 @@ body * {
 	bottom: -50px;
 }
 
-.player_board .misc_items * {
-	top: 0;
-	bottom: 0;
-	margin: auto;
-}
-
 .player_board .first_player_token_spot {
 	left: 80%;
 	top: 100%;
@@ -280,6 +275,17 @@ body * {
 	width: 400px;
 }
 
+#town .name_display {
+	width: 100px;
+	height: 145px;
+	top: 55px;
+	left: 200px;
+	margin: 0;
+	text-align: center;
+	font-weight: bold;
+	transform-origin: bottom left;
+}
+
 #ocean {
 	left: 750px;
 	top: 50px;
@@ -295,4 +301,8 @@ body * {
 	border-radius: 5px;
 	/*border: 3px solid red;*/
 	z-index: 5;
+}
+
+.building:hover {
+	z-index: 7; /*so the highlight from hovering doesn't get covered up by adjacent buildings*/
 }

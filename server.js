@@ -46,11 +46,8 @@ class Player {
 		this.connected = true;
 		this.color = undefined; //defined at game start
 		
-		this.first_player = false; //if you're first player this round
-		this.current_player = false; //if it's your turn
-		
+		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
 		this.ships = [new Ship(), new Ship()];
-		this.workers_left = 2;
 		this.food = 0;
 		this.wood = 0;
 		this.brick = 0;
@@ -81,15 +78,34 @@ class Building {
 		this.normal_function = normal_function;
 		this.workers = 0;
 		this.owner = undefined;
+		
+		buildings[type] = this;
 	}
-	placeWorker(name){
+	placeWorker(name){ //name: player name
+		//tell player where their worker is going
+		let worker_index = players[name].workers_at.indexOf("player_board");
+		if(worker_index != -1){
+			players[name].workers_at[worker_index] = this.type;
+		}
+		else {console.log("Couldn't find available worker in Player object");}
+		
+		//move worker
 		this.workers++;
+		let building_name = this.type; //can't reference 'this' in the queue
+		queue.push(function(){
+			io.sockets.emit("move_worker", name, building_name);
+			console.log("queue emitting move_worker");
+		});
+		
+		//do the building action
 		if(this.workers == 1){
 			this.first_function(name);
 		}
 		else {
 			this.normal_function(name);
 		}
+		
+		game.nextTurn();
 	}
 }
 
@@ -129,7 +145,17 @@ class Game {
 		this.unbuilt = []; //unbuilt Building objects
 	}
 	nextTurn(){
-		
+		this.current_player++;
+		if(this.current_player >= this.players.length){
+			this.nextRound();
+		}
+		else {
+			let cur_player_name = this.players[this.current_player]; //can't use 'this' inside a queue push
+			queue.push(function(){
+				io.sockets.emit("set_turn", cur_player_name);
+				console.log("queue emitting set_turn for "+cur_player_name);
+			});
+		}
 	}
 	movementPhase(show_banner=true){
 		//tell sockets to animate the banner indicating the movement phase
@@ -164,6 +190,8 @@ io.on("connection", function(socket) {
 	//when a new player joins, check if player exists. If they don't, create new player. If they do, only allow join if that player was disconnected
 	socket.on("new player", function(name, callback){
 		if(!players.hasOwnProperty(name)){
+			if(game != undefined){return;} //don't count spectators as players. If the game ends, they can refresh and join as a player
+			
 			//new player
 			console.log("New player: " + name + " (id: " + socket.id + ")");
 			players[name] = new Player(name);
@@ -239,7 +267,7 @@ io.on("connection", function(socket) {
 	});
 	
 	socket.on("place_worker", function(building){ //building is a string
-		
+		buildings[building].placeWorker(id_to_name[socket.id]);
 	});
 	
 	socket.on("build", function(building){ //building is a string
@@ -281,9 +309,7 @@ let busy_clients = []; //filled with connected player names, when client finishe
 function process_queue(){
 		
 	if(queue.length > 0 && busy_clients.length == 0){
-		
-		console.log("running");
-		
+				
 		//fill up busy_clients
 		for(let name in players){
 			if(players[name].connected){
@@ -301,13 +327,6 @@ function process_queue(){
 process_queue();
 
 
-setTimeout(function(){
-	queue.push(function(){io.sockets.emit("test","hello")});
-	queue.push(function(){io.sockets.emit("test","hello2")});
-	queue.push(function(){io.sockets.emit("test","hello3")});
-	queue.push(function(){io.sockets.emit("test","hello4")});
-}, 10000)
-
 
 // BUILDINGS -----------------------------------------------------
 
@@ -320,13 +339,35 @@ function initBuildings(){
 
 	new Building("general_store", true, function(name){}, function(name){});
 
-	new Building("forest", true, function(name){
-		//queue.push("give", name, 
-	}, function(name){
-		
-	});
+	new Building("forest", true,
+		function(name){
+			queue.push(function(){
+				io.sockets.emit("give", name, {wood: 3}, "forest");
+				players[name].wood += 3;
+				console.log("queue emitting forest give");
+			}); 
+		},
+		function(name){
+			queue.push(function(){
+				io.sockets.emit("give", name, {wood: 2}, "forest");
+				players[name].wood += 2;
+				console.log("queue emitting forest give");
+			});
+		}
+	);
 
-	new Building("farm", true, function(name){}, function(name){});
+	new Building("farm", true,
+		function(name){
+			io.sockets.emit("give", name, {food: 3}, "farm");
+			players[name].food += 3;
+			console.log("queue emitting farm give");
+		},
+		function(name){
+			io.sockets.emit("give", name, {food: 2}, "farm");
+			players[name].food += 2;
+			console.log("queue emitting farm give");
+		}
+	);
 
 	new Building("warehouse", true, function(name){}, function(name){});
 

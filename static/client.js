@@ -76,14 +76,6 @@ socket.on("player_connection", function(players){
 socket.on("start_game", function(players, game){
 	game_active = true;
 	init_game_display(players, game); //see init.js
-});	
-
-socket.on("give", function(name, data, from){
-	give(name, data, from); //see update.js
-});
-
-socket.on("take", function(amount, thing, name){
-	take(amount, thing, name); //see update.js
 });
 
 
@@ -93,14 +85,23 @@ socket.on("state", function(players, game){
 
 
 
-socket.on("banner", function(message){
-	
+//events requiring "done" emit when finished
+socket.on("move_worker", function(name, where){
+	moveWorker(name, where); //see update.js
 });
 
+socket.on("give", function(name, data, from){
+	give(name, data, from); //see update.js
+});
 
-socket.on("test", function(msg){
-	setTimeout(function(){
-		console.log(msg);
-		socket.emit("done");
-	}, 2000);
+socket.on("take", function(amount, thing, name){
+	take(amount, thing, name); //see update.js
+});
+
+socket.on("set_turn", function(name){
+	setTurn(name); //see update.js
+});
+
+socket.on("banner", function(message){
+	
 });

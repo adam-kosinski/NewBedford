@@ -37,10 +37,10 @@ document.addEventListener("click", function(e){
 			
 		}
 		else if(building == "forest"){
-			
+			socket.emit("place_worker", "forest");
 		}
 		else if(building == "farm"){
-			
+			socket.emit("place_worker", "farm");
 		}
 		else if(building == "warehouse"){
 			

@@ -97,10 +97,29 @@ function init_game_display(players, game){
 		building_areas[building.owner].build(building.type);
 	}
 	
+	//move any moved workers to appropriate building
+	for(p=0; p<game.players.length; p++){
+		let player = players[game.players[p]];
+		console.log(player);
+		for(w=0; w<player.workers_at.length; w++){
+			
+			let worker_location = player.workers_at[w];
+			if(worker_location != "player_board"){
+				//move worker to the building
+				let worker = player_boards[player.name].div.getElementsByClassName("worker")[0];
+				let worker_slot = buildings[worker_location].getOpenWorkerSlot();
+				worker.style.top = "0";
+				worker.style.left = "0";
+				worker_slot.appendChild(worker);
+			}
+			
+		}
+	}
+	
 	//set the correct player's turn
 	console.log(game);
 	console.log(game.players[game.current_player])
-	setTurn(game.players[game.current_player]);
+	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
 		
 	
 	home_screen.style.display = "none";

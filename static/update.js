@@ -49,7 +49,7 @@ function getLocation(what, relative_to, name=undefined){
 }
 
 
-let makeResourceAndAnimate = function(name, thing, start_pos){ //start_pos relative to player_board_container
+let makeResourceAndAnimate = function(name, thing, start_pos, emit_done=false){ //start_pos relative to player_board_container
 	//create resource
 	let resource = document.createElement("img");
 	resource.className = "animated_resource";
@@ -70,6 +70,10 @@ let makeResourceAndAnimate = function(name, thing, start_pos){ //start_pos relat
 		//add one to receiving player's counter
 		let counter = player_boards[name][thing + "_counter"];
 		counter.textContent = Number(counter.textContent) + 1;
+		
+		if(emit_done){
+			socket.emit("done");
+		}
 	});
 }
 
@@ -81,26 +85,28 @@ let makeResourceAndAnimate = function(name, thing, start_pos){ //start_pos relat
 
 //Two ways of calling - one for generic give, second for giving one item. The first uses the second
 
-function give(name, stuff, from){
+function give(name, data, from){
 	//name: name of player to give resource to
-	//stuff: object of {thing: amount, thing: amount, etc.} - things must be "food" "wood" "brick" or "money"
+	//data: object of {thing: amount, thing: amount, etc.} - resources must be "food" "wood" "brick" or "money"
 	//from: name of a building, or name of a player.
 		//If left undefined, will just increment the counter, no animation
 		//If resource is from a player, it must be 'money'
 	
-	let things = Object.keys(stuff); //array of property names - "food" "wood" etc.
-	//keep giving the first thing in 'stuff' until we run out
+	let resources = Object.keys(data); //array of property names - "food" "wood" etc.
+	//keep giving the first thing in 'data' until we run out
 	
 	let give_next = function(){
-		let this_thing = things[0];
-		if(stuff[things[0]] > 1){
-			stuff[things[0]]--;
+		let this_resource = resources[0];
+		if(data[this_resource] > 1){
+			data[resources[0]]--;
 		}
 		else {
-			things.splice(0,1); //done with this property
+			resources.splice(0,1); //done with this property
 		}
-		give_one(name, this_thing, from);
-		if(things.length > 0){
+		
+		give_one(name, this_resource, from, resources.length==0); //emit done when animation finishes if we just used the last resource
+		
+		if(resources.length > 0){
 			window.setTimeout(give_next, time_between_gives);
 		}
 	}
@@ -108,13 +114,14 @@ function give(name, stuff, from){
 }
 
 
-function give_one(name, thing, from){
+function give_one(name, thing, from, emit_done=false){
 	//name: name of player to give resource to
 	//amount: amount of resource to give
 	//thing: "food" "wood" "brick" or "money"
 	//from: name of a building, or name of a player.
 		//If left undefined, will just increment the counter, no animation
 		//If resource is from a player, it must be 'money'
+	//emit_done: if true, will emit the "done" event when the animation finishes
 	
 	//check if valid inputs
 	if(!player_boards.hasOwnProperty(name)){
@@ -137,17 +144,21 @@ function give_one(name, thing, from){
 		counter.textContent = Number(counter.textContent) - 1;
 		
 		let start_pos = getLocation(thing, animation_div, from); //from is a name here
-		makeResourceAndAnimate(name, thing, start_pos);
+		makeResourceAndAnimate(name, thing, start_pos, emit_done);
 	}
 	//check if coming from a building
 	else if(buildings.hasOwnProperty(from)){
 		let start_pos = getLocation(from, animation_div); //from is a building here
-		makeResourceAndAnimate(name, thing, start_pos);
+		makeResourceAndAnimate(name, thing, start_pos, emit_done);
 	}
 	else {
 		//just increment the receiving player's counter w/o animation
 		let counter = player_boards[name][thing + "_counter"];
 		counter.textContent = Number(counter.textContent) + 1;
+		
+		if(emit_done){
+			socket.emit("done");
+		}
 	}
 	
 }
@@ -178,6 +189,9 @@ function take(amount, thing, name){
 	//remove
 	let counter = player_boards[name][thing + "_counter"];
 	counter.textContent = Number(counter.textContent) - amount;
+	
+	
+	socket.emit("done");
 }
 
 
@@ -195,6 +209,10 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		let endpoint_1 = getLocation("worker_1_storage", animation_div, name);
 		let endpoint_2 = getLocation("worker_2_storage", animation_div, name);
 		
+		//figure out who has longer to travel, so we can emit "done" when they finish
+		let dist_1 = Math.hypot(endpoint_1.x - startpoint_1.x, endpoint_1.y - startpoint_1.y);
+		let dist_2 = Math.hypot(endpoint_2.x - startpoint_2.x, endpoint_2.y - startpoint_2.y);
+		
 		//animate
 		changeParent(worker_1, animation_div);
 		changeParent(worker_2, animation_div);
@@ -202,10 +220,12 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		moveAnimate(worker_1, player_board_container, startpoint_1, endpoint_1, worker_animation_speed, function(){
 			changeParent(worker_1, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
 			updateSelectableBuildings();
+			if(dist_1 > dist_2){socket.emit("done");}
 		});
 		moveAnimate(worker_2, player_board_container, startpoint_2, endpoint_2, worker_animation_speed, function(){
 			changeParent(worker_2, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
 			updateSelectableBuildings();
+			if(dist_2 >= dist_1){socket.emit("done");}
 		});
 	}
 	else if(buildings.hasOwnProperty(where)){
@@ -221,7 +241,7 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		
 		//get worker slot
 		let worker_slot = buildings[where].getOpenWorkerSlot();
-				
+		
 		//animate
 		changeParent(worker, animation_div);
 		let startpoint = getLocation(worker, animation_div);
@@ -229,6 +249,7 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		moveAnimate(worker, board, startpoint, endpoint, worker_animation_speed, function(){
 			changeParent(worker, worker_slot);
 			updateSelectableBuildings();
+			socket.emit("done");
 		});
 	}
 	else {
@@ -264,8 +285,7 @@ function updateSelectableBuildings(){
 
 
 
-function setTurn(name){ //name of player
-	//indicates whose turn it is in the GUI, disables/enables appropriate things you can click
+function setTurn(name){ //name of player, or undefined to set it to no one's turn (e.g. during movement phase)
 	
 	//Click event handler requires a building to be selectable to do its action, so updating selectable will suffice for enable/disable stuff
 	
@@ -278,7 +298,11 @@ function setTurn(name){ //name of player
 	for(let p in player_boards){
 		player_boards[p].div.style.backgroundColor = "antiquewhite";
 	}
-	player_boards[name].div.style.backgroundColor = "#99ff99";
+	if(name != undefined){
+		player_boards[name].div.style.backgroundColor = "#99ff99";
+	}
+	
+	socket.emit("done");
 }
 
 

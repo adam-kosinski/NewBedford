@@ -30,11 +30,12 @@ class Building {
 			this.addWorkerSlot(building_width/2 - worker_height/2, building_height/2 - worker_height/2);
 		}
 		
-		this.setSelectable(true); //TODO remove, let setTurn() function do this
-		
 		//add it
 		town.appendChild(this.div);
 		buildings[type] = this;
+		
+		//initialize if it's selectable (have to have added it first)
+		updateSelectableBuildings();
 	}
 	
 	addWorkerSlot(x, y){ //coords relative to building div, top-left of the worker
@@ -60,7 +61,7 @@ class Building {
 		let n = 0;
 		for(let i=0; i<this.worker_slots.length; i++){
 			let slot = this.worker_slots[i];
-			if(slot.children.length == 0){
+			if(slot.children.length != 0){
 				n++;
 			}
 		}
@@ -123,6 +124,11 @@ class BuildingArea {
 		Check how many BuildingAreas exist, rotate appropriately
 		Add offsets to make location top-left of building, and relative to upper-left of town div instead of town center
 		*/
+		
+		if(buildings.hasOwnProperty(building_name)){
+			throw new Error("Cannot build duplicate building");
+		}
+		
 		let seq = [
 			{x: 50, y: -195}, //center
 			{x: 150, y: -150}, //right
@@ -163,13 +169,3 @@ class BuildingArea {
 		this.buildings[n] = building_name;
 	}
 }
-
-
-
-
-
-
-
-building_click_handlers = {
-	"building": function(){}
-};

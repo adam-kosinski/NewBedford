@@ -20,10 +20,10 @@ function getLocation(what, relative_to, name=undefined){
 	if(what instanceof HTMLElement){
 		let box = what.getBoundingClientRect();
 		let relative_to_box = relative_to.getBoundingClientRect();
-		
+				
 		return {
-			x: box.x - relative_to.x,
-			y: box.y - relative_to.y
+			x: box.x - relative_to_box.x,
+			y: box.y - relative_to_box.y
 		};
 	}
 	else if(buildings.hasOwnProperty(what)){
@@ -48,29 +48,24 @@ function getLocation(what, relative_to, name=undefined){
 	}
 }
 
-function newAnimatedResource(type){
-	let img = document.createElement("img");
-	img.className = "animated_resource";
-	switch(type){
-		case "food": img.src = "/static/images/food_3d.png"; break;
-		case "wood": img.src = "/static/images/wood_3d.png"; break;
-		case "brick": img.src = "/static/images/brick_3d.png"; break;
-		case "money": img.src = "/static/images/small_coin_front.png"; break;
-	}
-	return img;
-}
-
 
 let makeResourceAndAnimate = function(name, thing, start_pos){ //start_pos relative to player_board_container
 	//create resource
-	let resource = newAnimatedResource(thing); //thing should always be "money" here
+	let resource = document.createElement("img");
+	resource.className = "animated_resource";
+	switch(thing){
+		case "food": resource.src = "/static/images/food_3d.png"; break;
+		case "wood": resource.src = "/static/images/wood_3d.png"; break;
+		case "brick": resource.src = "/static/images/brick_3d.png"; break;
+		case "money": resource.src = "/static/images/small_coin_front.png"; break;
+	}
 	resource.style.top = start_pos.y + "px";
 	resource.style.left = start_pos.x + "px";
-	player_board_container.appendChild(resource);
+	animation_div.appendChild(resource);
 	
 	//animate it
-	let endpoint = getLocation(thing, player_scroll_wrapper, name);
-	moveAnimate(resource, start_pos, endpoint, give_animation_speed, function(){ //see animate.js
+	let endpoint = getLocation(thing, animation_div, name);
+	moveAnimate(resource, player_board_container, start_pos, endpoint, give_animation_speed, function(){ //see animate.js
 		resource.remove();
 		//add one to receiving player's counter
 		let counter = player_boards[name][thing + "_counter"];
@@ -141,12 +136,12 @@ function give_one(name, thing, from){
 		let counter = player_boards[from][thing + "_counter"];
 		counter.textContent = Number(counter.textContent) - 1;
 		
-		let start_pos = getLocation(thing, player_scroll_wrapper, from); //from is a name here
+		let start_pos = getLocation(thing, animation_div, from); //from is a name here
 		makeResourceAndAnimate(name, thing, start_pos);
 	}
 	//check if coming from a building
 	else if(buildings.hasOwnProperty(from)){
-		let start_pos = getLocation(from, player_scroll_wrapper); //from is a building here
+		let start_pos = getLocation(from, animation_div); //from is a building here
 		makeResourceAndAnimate(name, thing, start_pos);
 	}
 	else {
@@ -187,23 +182,82 @@ function take(amount, thing, name){
 
 
 
-function moveWorker(name, where){
+function moveWorker(name, where){ //note: trying to move a player to a building while a place worker animation is going on will mess up the worker slots. Annoying to fix so stays
 	//name: name of player
-	//where: a building, or "player_board" to return it to storage
+	//where: a building, or "player_board" to return all workers to storage
 	
 	if(where == "player_board"){
+		let worker_1 = player_boards[name].worker_1;
+		let worker_2 = player_boards[name].worker_2;
 		
+		let startpoint_1 = getLocation(worker_1, animation_div);
+		let startpoint_2 = getLocation(worker_2, animation_div);
+		let endpoint_1 = getLocation("worker_1_storage", animation_div, name);
+		let endpoint_2 = getLocation("worker_2_storage", animation_div, name);
+		
+		//animate
+		changeParent(worker_1, animation_div);
+		changeParent(worker_2, animation_div);
+		
+		moveAnimate(worker_1, player_board_container, startpoint_1, endpoint_1, worker_animation_speed, function(){
+			changeParent(worker_1, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
+			updateSelectableBuildings();
+		});
+		moveAnimate(worker_2, player_board_container, startpoint_2, endpoint_2, worker_animation_speed, function(){
+			changeParent(worker_2, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
+			updateSelectableBuildings();
+		});
 	}
 	else if(buildings.hasOwnProperty(where)){
-		//TODO: actually write this		
-		let worker_slot = buildings[where].getOpenWorkerSlot();
+		//get worker
+		let available_workers = player_boards[name].div.getElementsByClassName("worker");
+		let worker;
+		if(available_workers.length > 0){
+			worker = available_workers[0];
+		}
+		else {
+			throw new Error("No available worker found");
+		}
 		
-		worker_slot.appendChild(player_boards[name].worker_1);
-		player_boards[name].worker_1.style.top = "0";
-		player_boards[name].worker_1.style.left = "0";
+		//get worker slot
+		let worker_slot = buildings[where].getOpenWorkerSlot();
+				
+		//animate
+		changeParent(worker, animation_div);
+		let startpoint = getLocation(worker, animation_div);
+		let endpoint = getLocation(worker_slot, animation_div);
+		moveAnimate(worker, board, startpoint, endpoint, worker_animation_speed, function(){
+			changeParent(worker, worker_slot);
+			updateSelectableBuildings();
+		});
 	}
 	else {
 		throw new Error("Cannot move worker to " + where +", invalid destination");
+	}
+}
+
+
+function updateSelectableBuildings(){
+	for(let type in buildings){
+		if(my_turn){
+			if(buildings[type].in_town){
+				buildings[type].setSelectable(true);
+			}
+			else {
+				if(!buildings[type].has_action){
+					buildings[type].setSelectable(false);
+				}
+				else if(buildings[type].getNumberOfWorkers() >= 1){
+					buildings[type].setSelectable(false);
+				}
+				else {
+					buildings[type].setSelectable(true);
+				}
+			}
+		}
+		else {
+			buildings[type].setSelectable(false);
+		}
 	}
 }
 
@@ -212,10 +266,19 @@ function moveWorker(name, where){
 
 function setTurn(name){ //name of player
 	//indicates whose turn it is in the GUI, disables/enables appropriate things you can click
-		
-	//remember not all buildings are selectable (e.g. mansion)
-	//I'm going to have the click event handler check if the building is selectable, only then do the action
-	//check for how many workers are on the building - if it's player owned and there's a worker, don't make it selectable
+	
+	//Click event handler requires a building to be selectable to do its action, so updating selectable will suffice for enable/disable stuff
+	
+	//change data/enable-disable stuff
+	my_turn = (name == my_name);
+	updateSelectableBuildings();
+	
+	//update GUI stuff
+	//player board background
+	for(let p in player_boards){
+		player_boards[p].div.style.backgroundColor = "antiquewhite";
+	}
+	player_boards[name].div.style.backgroundColor = "#99ff99";
 }
 
 

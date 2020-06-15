@@ -4,6 +4,7 @@ let player_display = document.getElementById("player_display");
 let start_button = document.getElementById("start_button");
 
 let game_div = document.getElementById("game_div");
+let animation_div = document.getElementById("animation_div"); //whenever animating, make the object a child of this b/c it's fixed position
 let player_scroll_wrapper = document.getElementById("player_scroll_wrapper");
 let player_board_container = document.getElementById("player_board_container");
 let town = document.getElementById("town");
@@ -19,6 +20,8 @@ let building_click_handlers = {}; //keys are buildings, contains functions - wha
 //state
 let my_name;
 let game_active = false;
+let animation_in_progress = false; //click event handlers only run when this is false
+let my_turn = false;
 
 
 
@@ -26,6 +29,8 @@ let game_active = false;
 //config
 let give_animation_speed = 0.3; //pixels/ms
 let time_between_gives = 150; //ms
+
+let worker_animation_speed = 0.3; //pixels/ms
 
 //config copied from style.css
 let building_width = 100; //px

@@ -96,6 +96,11 @@ function init_game_display(players, game){
 		let building = game.buildings[b];
 		building_areas[building.owner].build(building.type);
 	}
+	
+	//set the correct player's turn
+	console.log(game);
+	console.log(game.players[game.current_player])
+	setTurn(game.players[game.current_player]);
 		
 	
 	home_screen.style.display = "none";
@@ -135,7 +140,7 @@ class PlayerBoard {
 			yellow: "#ffff99",
 			orange: "#ffdb99",
 			blue: "#9999ff",
-			green: "#99ff99"
+			green: "#b3e6b3"
 		};
 		this.misc_items.style.backgroundColor = color_map[this.color];
 		this.div.appendChild(this.misc_items);
@@ -156,10 +161,10 @@ class PlayerBoard {
 				big_ship_right_whale: {x: 182, y: 160},
 				big_ship_bowhead_whale: {x: 228, y: 160},
 				big_ship_sperm_whale: {x: 274, y: 160},
-				worker_1: {x: 5, y: 210},
-				worker_2: {x: 45, y: 210},
-				small_ship: {x: 85, y: 213},
-				big_ship: {x: 125, y: 208}
+				worker_1_storage: {x: 5, y: 210},
+				worker_2_storage: {x: 45, y: 210},
+				small_ship_storage: {x: 85, y: 213},
+				big_ship_storage: {x: 125, y: 208}
 			};
 		}
 		else {
@@ -177,10 +182,10 @@ class PlayerBoard {
 				right_whale: {x: 113, y: 99},
 				bowhead_whale: {x: 142, y: 99},
 				sperm_whale: {x: 171, y: 99},
-				worker_1: {x: 5, y: 135},
-				worker_2: {x: 45, y: 135},
-				small_ship: {x: 85, y: 138},
-				big_ship: {x: 125, y: 133}
+				worker_1_storage: {x: 5, y: 135},
+				worker_2_storage: {x: 45, y: 135},
+				small_ship_storage: {x: 85, y: 138},
+				big_ship_storage: {x: 125, y: 133}
 			};
 		};
 		
@@ -190,29 +195,29 @@ class PlayerBoard {
 		this.worker_1 = document.createElement("img");
 		this.worker_1.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_1.className = "worker";
-		this.worker_1.style.left = this.location.worker_1.x + "px";
-		this.worker_1.style.top = this.location.worker_1.y + "px";
+		this.worker_1.style.left = this.location.worker_1_storage.x + "px";
+		this.worker_1.style.top = this.location.worker_1_storage.y + "px";
 		this.div.appendChild(this.worker_1);
 		
 		this.worker_2 = document.createElement("img");
 		this.worker_2.src = "/static/images/" + this.color + "_worker.png";
 		this.worker_2.className = "worker";
-		this.worker_2.style.left = this.location.worker_2.x + "px";
-		this.worker_2.style.top = this.location.worker_2.y + "px";
+		this.worker_2.style.left = this.location.worker_2_storage.x + "px";
+		this.worker_2.style.top = this.location.worker_2_storage.y + "px";
 		this.div.appendChild(this.worker_2);
 		
 		this.small_ship = document.createElement("img");
 		this.small_ship.src = "/static/images/" + this.color + "_small_ship.png";
 		this.small_ship.className = "small_ship";
-		this.small_ship.style.left = this.location.small_ship.x + "px";
-		this.small_ship.style.top = this.location.small_ship.y + "px";
+		this.small_ship.style.left = this.location.small_ship_storage.x + "px";
+		this.small_ship.style.top = this.location.small_ship_storage.y + "px";
 		this.div.appendChild(this.small_ship);
 		
 		this.big_ship = document.createElement("img");
 		this.big_ship.src = "/static/images/" + this.color + "_big_ship.png";
 		this.big_ship.className = "big_ship";
-		this.big_ship.style.left = this.location.big_ship.x + "px";
-		this.big_ship.style.top = this.location.big_ship.y + "px";
+		this.big_ship.style.left = this.location.big_ship_storage.x + "px";
+		this.big_ship.style.top = this.location.big_ship_storage.y + "px";
 		this.div.appendChild(this.big_ship);
 		
 		

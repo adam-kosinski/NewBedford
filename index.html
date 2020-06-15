@@ -5,7 +5,7 @@
 		<link type="text/css" rel="stylesheet" href="/static/style.css"/>
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
-	<body>		
+	<body>
 		<div id="home_screen">
 			<h1>Welcome!</h1>
 			<div id="player_display"></div>
@@ -25,9 +25,10 @@
 				</div>
 			</div>
 			
+			<div id="animation_div"></div>
+			
 			<img id="first_player_token" src="/static/images/first_player_token.png"/>
 			
-			<div id="hidden"></div> <!--stores images not in use, populated in init.js-->
 			<div id="build_menu"></div> <!--displays buildings not yet built-->
 			
 		</div>
@@ -38,6 +39,7 @@
 		<script src="/static/init.js"></script>
 		<script src="/static/animate.js"></script>
 		<script src="/static/update.js"></script>
+		<script src="/static/popup.js"></script>
 		<script src="/static/events.js"></script>
 		
 		<script src="/static/client.js"></script>

@@ -1,3 +1,15 @@
+/*
+Notes
+Put building definitions in a separate module
+Make spectator (late) connection work better - low priority
+Currently easy to mistype your name when reentering, make that better - low priority
+For the take() function (update.js), consider making background of the counters go red briefly then fade back to normal
+ - better idea: make the resource go to the building where they're being used, similar animation to the give() function
+ 
+ FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
+*/
+
+
 // Dependencies
 var express = require("express");
 var http = require("http");
@@ -62,21 +74,21 @@ class Ship {
 }
 
 class Building {
-	constructor(type, in_town, first, normal=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
+	constructor(type, in_town, first_function, normal_function=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
 		this.type = type;
-		this.in_town = name;
-		this.first = first;
-		this.normal = normal;
+		this.in_town = in_town;
+		this.first_function = first_function;
+		this.normal_function = normal_function;
 		this.workers = 0;
 		this.owner = undefined;
 	}
 	placeWorker(name){
 		this.workers++;
 		if(this.workers == 1){
-			this.first();
+			this.first_function(name);
 		}
 		else {
-			this.normal();
+			this.normal_function(name);
 		}
 	}
 }
@@ -111,10 +123,12 @@ class Game {
 		this.ocean = new Ocean(this.players.length);
 		this.whaling_result = [];
 		
+		
+		initBuildings();
 		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
 	}
-	nextTurn(){ //called from the end_turn event below
+	nextTurn(){
 		
 	}
 	movementPhase(show_banner=true){
@@ -142,9 +156,9 @@ let players = {}; //holds Player objects, keys are player names (not socket ids)
 let id_to_name = {}; //maps socket ids to names. If a name isn't in here, player is disconnected
 
 let game = undefined; //undefined means no game currently going on
-let buildings = {}; //holds Building objects, keys are building names. Populated in a separate module when app starts
+let buildings = {}; //holds Building objects, keys are building names. Function to define at bottom of this file, called in the Game constructor
 
-// Add the WebSocket handlers
+// WEBSOCKET HANDLERS -------------------------------------------
 io.on("connection", function(socket) {
 	
 	//when a new player joins, check if player exists. If they don't, create new player. If they do, only allow join if that player was disconnected
@@ -173,9 +187,16 @@ io.on("connection", function(socket) {
 	socket.on("disconnect", function(){
 		if(id_to_name.hasOwnProperty(socket.id)){
 			console.log(id_to_name[socket.id]+" disconnected (id: " + socket.id + ")");
+			
 			let player = players[id_to_name[socket.id]];
 			player.connected = false;
 			delete id_to_name[socket.id];
+			
+			//remove from busy_clients if there
+			let index = busy_clients.indexOf(player.name);
+			if(index != -1){
+				busy_clients.splice(index, 1);
+			}
 		}
 		io.sockets.emit("player_connection", players);
 	});
@@ -217,7 +238,7 @@ io.on("connection", function(socket) {
 		
 	});
 	
-	socket.on("place_worker", function(place){ //place is a string
+	socket.on("place_worker", function(building){ //building is a string
 		
 	});
 	
@@ -229,9 +250,14 @@ io.on("connection", function(socket) {
 		
 	});
 	
-	socket.on("end_turn", function(){
-		
+	socket.on("done", function(){ //used for action queue, see below
+		let name = id_to_name[socket.id];
+		let index = busy_clients.indexOf(name);
+		if(index != -1){
+			busy_clients.splice(index, 1);
+		}
 	});
+	
 });
 
 
@@ -240,11 +266,116 @@ function clearGame(){
 }
 
 
-/*
-Notes
-Put building definitions in a separate module
-Make spectator (late) connection work better - low priority
-Currently easy to mistype your name when reentering, make that better - low priority
-For the take() function (update.js), consider making background of the counters go red briefly then fade back to normal
- - better idea: make the resource go to the building where they're being used, similar animation to the give() function
-*/
+
+// ACTION QUEUE --------------------------------------------------
+
+//Since we'll want to do multiple things in a row, but aren't sure how long the clients will take to complete them,
+//have a queue of things to tell the clients what to do. Only do the next thing in the queue when all the clients
+//have completed the previous thing.
+
+let queue = []; //filled with action functions - just functions to run
+//items with lower indices are processed first, so to add an action object to the queue, do queue.push(object)
+
+let busy_clients = []; //filled with connected player names, when client finishes a task, name is removed. If empty, we can do the next task
+//note - if a client disconnects, they're automatically removed - see above
+function process_queue(){
+		
+	if(queue.length > 0 && busy_clients.length == 0){
+		
+		console.log("running");
+		
+		//fill up busy_clients
+		for(let name in players){
+			if(players[name].connected){
+				busy_clients.push(name);
+			}
+		}
+		
+		//emit
+		let action = queue.splice(0,1)[0];
+		action();
+	}
+	
+	setTimeout(process_queue, 100);
+}
+process_queue();
+
+
+setTimeout(function(){
+	queue.push(function(){io.sockets.emit("test","hello")});
+	queue.push(function(){io.sockets.emit("test","hello2")});
+	queue.push(function(){io.sockets.emit("test","hello3")});
+	queue.push(function(){io.sockets.emit("test","hello4")});
+}, 10000)
+
+
+// BUILDINGS -----------------------------------------------------
+
+function initBuildings(){
+	
+	buildings = {}; //clear any previous state
+
+	//central town
+	new Building("town_hall", true, function(name){}, function(name){});
+
+	new Building("general_store", true, function(name){}, function(name){});
+
+	new Building("forest", true, function(name){
+		//queue.push("give", name, 
+	}, function(name){
+		
+	});
+
+	new Building("farm", true, function(name){}, function(name){});
+
+	new Building("warehouse", true, function(name){}, function(name){});
+
+
+	//town - docks
+
+	new Building("dockyard", true, function(name){}, function(name){});
+
+	new Building("city_pier", true, function(name){}, function(name){});
+
+
+	//player buildings
+	new Building("bakery", false, function(name){});
+
+	new Building("bank", false, function(name){});
+
+	new Building("brickyard", false, function(name){});
+
+	new Building("chandlery", false, function(name){});
+
+	new Building("cooperage", false, function(name){});
+
+	new Building("counting_house", false, function(name){});
+
+	new Building("courthouse", false, function(name){});
+
+	new Building("dry_dock", false, function(name){});
+
+	new Building("inn", false, function(name){});
+
+	new Building("lighthouse", false, function(name){});
+
+	new Building("lumber_mill", false, function(name){});
+
+	new Building("mansion", false, function(name){});
+
+	new Building("market", false, function(name){});
+
+	new Building("municipal_office", false, function(name){});
+
+	new Building("post_office", false, function(name){});
+
+	new Building("schoolhouse", false, function(name){});
+
+	new Building("seamens_bethel", false, function(name){});
+
+	new Building("tavern", false, function(name){});
+
+	new Building("tryworks", false, function(name){});
+
+	new Building("wharf", false, function(name){});
+}

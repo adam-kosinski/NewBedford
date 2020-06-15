@@ -78,8 +78,8 @@ socket.on("start_game", function(players, game){
 	init_game_display(players, game); //see init.js
 });	
 
-socket.on("give", function(name, amount, thing, from){
-	give(name, amount, thing, from); //see update.js
+socket.on("give", function(name, data, from){
+	give(name, data, from); //see update.js
 });
 
 socket.on("take", function(amount, thing, name){
@@ -97,3 +97,10 @@ socket.on("banner", function(message){
 	
 });
 
+
+socket.on("test", function(msg){
+	setTimeout(function(){
+		console.log(msg);
+		socket.emit("done");
+	}, 2000);
+});

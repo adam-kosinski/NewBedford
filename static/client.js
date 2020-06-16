@@ -9,9 +9,12 @@ let id; //id of the socket
 function registerName(){
 	//my_name declared in globals.js
 	my_name = prompt("Please enter a name (< 11 characters or display problems happen):"); //TODO: make this a GUI thing not a prompt
-	if(!my_name || my_name===""){
+	if(my_name===""){
 		registerName();
 		return;
+	}
+	if(!my_name){
+		throw new Error("Name entry canceled, leaving webpage blank");
 	}
 	
 	socket.emit("new player", my_name, function(success){

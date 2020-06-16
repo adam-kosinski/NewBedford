@@ -6,7 +6,6 @@
 	z-index: 20;
 	display: none;
 }
-
 .popup {
 	position: fixed;
 	top: 0;
@@ -18,9 +17,11 @@
 	
 	background-color: antiquewhite;
 	border: 6px solid #e9d496;
+	font-size: 24px;
+	text-align: center;
+	padding: 20px;
 	display: none;
 }
-
 .popup .x_button {
 	cursor: pointer;
 	right: 0;
@@ -37,47 +38,101 @@
 #warehouse_popup {
 	width: 450px;
 	height: 150px;
-	font-size: 24px;
-	text-align: center;
-	padding: 20px;
 }
-
-#warehouse_popup p {
-	margin: 0;
-}
-
 #warehouse_popup img {
 	height: 50px;
 	margin: 5px;
 	padding: 10px;
 }
-
 #warehouse_equation {
 	top: 50px;
 }
-
 #warehouse_equation * {
 	position: static;
 	display: inline-block;
 }
-
 #warehouse_plus {
 	width: 50px;
 	transform: translate(0, -30px);
 }
-
 #warehouse_choice * {
 	display: block;
 }
-
 #warehouse_choice_items * {
 	display: inline-block;
 	border: 1px solid gray;
 	border-radius: 20px;
 	background-color: white;
 }
-
 #warehouse_choice_items *:hover {
 	background-color: yellow;
 	cursor: pointer;
+}
+
+
+/* general store ------------------------------- */
+#store_popup {
+	width: 330px;
+	height: 400px;
+}
+#store_popup img {
+	height: 40px;
+}
+#store_table {
+	border-collapse: collapse;
+	background-color: lightblue;
+}
+#store_table * {
+	position: static;
+}
+#store_headers {
+	background-color: steelblue;
+	font-weight: bold;
+}
+#store_table td {
+	border: 1px solid black;
+	padding: 10px;
+}
+.sell_td {
+	width: 100px;
+}
+.sell_td * {
+	display: inline-block;
+}
+.sell_td p {
+	transform: translate(0, -10px);
+}
+.plus_minus div {
+	width: 20px;
+	height: 20px;
+	font-size: 18px;
+	font-weight: bold;
+	line-height: 20px;
+	display: block;
+	background-color: lightgray;
+	border: 1px solid gray;
+	margin: 3px;
+	cursor: pointer;
+}
+.plus_minus div:hover {
+	background-color: #eee;
+}
+#store_total_p {
+	bottom: 40px;
+	left: 65px;
+}
+#store_bonus {
+	font-size: 18px;
+	bottom: 10px;
+	left: 65px;
+}
+#market_bonus {
+	font-size: 14px;
+	bottom: 10px;
+	left: 65px;
+}
+#store_sell_button{
+	bottom: 40px;
+	left: 225px;
+	font-size: 24px;
 }

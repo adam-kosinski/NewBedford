@@ -13,6 +13,12 @@ let first_player_token = document.getElementById("first_player_token");
 
 let popup_background = document.getElementById("popup_background");
 
+let food_to_sell = document.getElementById("food_to_sell");
+let wood_to_sell = document.getElementById("wood_to_sell");
+let brick_to_sell = document.getElementById("brick_to_sell");
+let store_sell_button = document.getElementById("store_sell_button");
+let opened_store = undefined;
+
 //bulk DOM info (references, locations, data)
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)
 let buildings = {}; //keys are building names, contains Building objects (see init.js)

@@ -13,6 +13,9 @@
 	.building:hover - 7
 	
 	#animation_div - 12
+	
+	#popup_background - 20
+	.popup - 21
 */
 
 
@@ -27,7 +30,7 @@ body * {
 }
 
 
-/* home screen ----------------------------------*/
+/* home screen ----------------------------------------------------*/
 #home_screen {
 	display: none;
 	width: 100vw;
@@ -66,7 +69,7 @@ body * {
 	top: 85vh;
 }
 
-/* game misc ---------------------------------------------*/
+/* game misc ------------------------------------------------------*/
 #game_div {
 	display: none;
 }
@@ -100,7 +103,7 @@ body * {
 	cursor: pointer;
 }
 
-/* game player boards ----------------------------------------*/
+/* game player boards -------------------------------------------------*/
 #player_scroll_wrapper {
 	position: fixed;
 	z-index: 10;
@@ -269,7 +272,7 @@ body * {
 }
 
 
-/* game board --------------------------------*/
+/* game board -----------------------------------------------*/
 
 #board {
 	position: absolute;

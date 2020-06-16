@@ -11,6 +11,8 @@ let town = document.getElementById("town");
 
 let first_player_token = document.getElementById("first_player_token");
 
+let popup_background = document.getElementById("popup_background");
+
 //bulk DOM info (references, locations, data)
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)
 let buildings = {}; //keys are building names, contains Building objects (see init.js)

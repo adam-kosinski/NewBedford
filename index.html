@@ -3,6 +3,7 @@
 	<head>
 		<title>New Bedford</title>
 		<link type="text/css" rel="stylesheet" href="/static/style.css"/>
+		<link type="text/css" rel="stylesheet" href="/static/popup.css"/>
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body>
@@ -26,10 +27,30 @@
 			</div>
 			
 			<div id="animation_div"></div>
-			
 			<img id="first_player_token" src="/static/images/first_player_token.png"/>
 			
-			<div id="build_menu"></div> <!--displays buildings not yet built-->
+			
+			<!--Popups-->
+			<div id="popup_background"></div>
+			<!--div id="build_menu">
+				<div class="x_button">&#10006;"</div>
+			</div--> 
+			<div id="warehouse_popup" class="popup">
+				<div class="x_button">&#10006;</div>
+				<p>You get:</p>
+				<div id="warehouse_equation">
+					<img src="/static/images/brick_3d.png"/>
+					<div id="warehouse_plus">+</div>
+					<div id="warehouse_choice">
+						<p>Choose</p>
+						<div id="warehouse_choice_items">
+							<img id="warehouse_wood" src="/static/images/wood_3d.png"/>
+							<img id="warehouse_food" src="/static/images/food_3d.png"/>
+							<img id="warehouse_brick" src="/static/images/brick_3d.png"/>
+						</div>
+					</div>
+				</div>
+			</div>
 			
 		</div>
 		

@@ -1,0 +1,83 @@
+#popup_background {
+	position: fixed;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0,0,0,0.5);
+	z-index: 20;
+	display: none;
+}
+
+.popup {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+	z-index: 21;
+	
+	background-color: antiquewhite;
+	border: 6px solid #e9d496;
+	display: none;
+}
+
+.popup .x_button {
+	cursor: pointer;
+	right: 0;
+	top: 0;
+	font-size: 18px;
+	width: 20px;
+	height: 20px;
+	line-height: 20px;
+	text-align: center;
+}
+
+/* warehouse ------------------------------*/
+
+#warehouse_popup {
+	width: 450px;
+	height: 150px;
+	font-size: 24px;
+	text-align: center;
+	padding: 20px;
+}
+
+#warehouse_popup p {
+	margin: 0;
+}
+
+#warehouse_popup img {
+	height: 50px;
+	margin: 5px;
+	padding: 10px;
+}
+
+#warehouse_equation {
+	top: 50px;
+}
+
+#warehouse_equation * {
+	position: static;
+	display: inline-block;
+}
+
+#warehouse_plus {
+	width: 50px;
+	transform: translate(0, -30px);
+}
+
+#warehouse_choice * {
+	display: block;
+}
+
+#warehouse_choice_items * {
+	display: inline-block;
+	border: 1px solid gray;
+	border-radius: 20px;
+	background-color: white;
+}
+
+#warehouse_choice_items *:hover {
+	background-color: yellow;
+	cursor: pointer;
+}

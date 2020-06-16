@@ -81,7 +81,7 @@ class Building {
 		
 		buildings[type] = this;
 	}
-	placeWorker(name){ //name: player name
+	placeWorker(name, data){ //name: player name, data: optional object
 		//tell player where their worker is going
 		let worker_index = players[name].workers_at.indexOf("player_board");
 		if(worker_index != -1){
@@ -99,10 +99,10 @@ class Building {
 		
 		//do the building action
 		if(this.workers == 1){
-			this.first_function(name);
+			this.first_function(name, data);
 		}
 		else {
-			this.normal_function(name);
+			this.normal_function(name, data);
 		}
 		
 		game.nextTurn();
@@ -134,6 +134,7 @@ class Game {
 	constructor(players){ //players is an array of player names
 		this.players = players; //first player for the round is the first in this list
 		this.current_player = 0; //whose turn it currently is, index referencing this.players
+		this.worker_cycle = 0; //0 or 1, depending on if players are placing their first or second player
 		this.round = 1;
 		
 		this.ocean = new Ocean(this.players.length);
@@ -147,15 +148,28 @@ class Game {
 	nextTurn(){
 		this.current_player++;
 		if(this.current_player >= this.players.length){
-			this.nextRound();
+			if(this.worker_cycle == 0){
+				console.log("Starting second worker cycle");
+				this.worker_cycle = 1;
+				this.current_player = 0;
+				//then continue on to tell sockets to change player turn (below)
+			}
+			else {
+				//set it to no one's turn, then do movement phase
+				queue.push(function(){
+					io.sockets.emit("set_turn", undefined);
+					console.log("queue emitting set_turn for no one");
+				});
+				this.movementPhase();
+				return;
+			}
 		}
-		else {
-			let cur_player_name = this.players[this.current_player]; //can't use 'this' inside a queue push
-			queue.push(function(){
-				io.sockets.emit("set_turn", cur_player_name);
-				console.log("queue emitting set_turn for "+cur_player_name);
-			});
-		}
+		//tell sockets to change player turn
+		let cur_player_name = this.players[this.current_player]; //can't use 'this' inside a queue push
+		queue.push(function(){
+			io.sockets.emit("set_turn", cur_player_name);
+			console.log("queue emitting set_turn for "+cur_player_name);
+		});
 	}
 	movementPhase(show_banner=true){
 		//tell sockets to animate the banner indicating the movement phase
@@ -170,6 +184,12 @@ class Game {
 	}
 	nextRound(){
 		//remember to clear workers from buildings
+		this.round++;
+		if(this.round > 12){
+			//end game somehow
+		}
+		
+		this.worker_cycle = 0;
 	}
 	returnAllShips(){
 		//do movement phase a bunch - w/o movement phase banner though
@@ -266,8 +286,8 @@ io.on("connection", function(socket) {
 		
 	});
 	
-	socket.on("place_worker", function(building){ //building is a string
-		buildings[building].placeWorker(id_to_name[socket.id]);
+	socket.on("place_worker", function(building, data=undefined){ //building is a string, data is an optional object
+		buildings[building].placeWorker(id_to_name[socket.id], data);
 	});
 	
 	socket.on("build", function(building){ //building is a string
@@ -309,7 +329,7 @@ let busy_clients = []; //filled with connected player names, when client finishe
 function process_queue(){
 		
 	if(queue.length > 0 && busy_clients.length == 0){
-				
+		
 		//fill up busy_clients
 		for(let name in players){
 			if(players[name].connected){
@@ -358,18 +378,38 @@ function initBuildings(){
 
 	new Building("farm", true,
 		function(name){
-			io.sockets.emit("give", name, {food: 3}, "farm");
-			players[name].food += 3;
-			console.log("queue emitting farm give");
+			queue.push(function(){
+				io.sockets.emit("give", name, {food: 3}, "farm");
+				players[name].food += 3;
+				console.log("queue emitting farm give");
+			});
 		},
 		function(name){
-			io.sockets.emit("give", name, {food: 2}, "farm");
-			players[name].food += 2;
-			console.log("queue emitting farm give");
+			queue.push(function(){
+				io.sockets.emit("give", name, {food: 2}, "farm");
+				players[name].food += 2;
+				console.log("queue emitting farm give");
+			});
 		}
 	);
 
-	new Building("warehouse", true, function(name){}, function(name){});
+	new Building("warehouse", true,
+		function(name, data){ //data in form of a give object {resource:amount, etc.}
+			queue.push(function(){
+				io.sockets.emit("give", name, data, "warehouse");
+				for(resource in data){
+					players[name][resource] += data[resource];
+				}
+				console.log("queue emitting warehouse give");
+			});
+		},
+		function(name){
+			queue.push(function(){
+				io.sockets.emit("give", name, {brick: 1}, "warehouse");
+				console.log("queue emitting warehouse give");
+			});
+		}
+	);
 
 
 	//town - docks

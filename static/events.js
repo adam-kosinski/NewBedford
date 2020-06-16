@@ -14,6 +14,9 @@ start_button.addEventListener("click", function(){
 document.addEventListener("click", function(e){
 		
 	if(/building/.test(e.target.className) && /selectable/.test(e.target.className)){		
+		
+		//Checks
+		
 		if(animation_in_progress){
 			alert("Animation in progress, wait for it to finish before doing stuff");
 			return;
@@ -29,6 +32,8 @@ document.addEventListener("click", function(e){
 		}
 		
 		
+		//Do building specific stuff
+		
 		//central town
 		if(building == "town_hall"){
 			
@@ -43,7 +48,12 @@ document.addEventListener("click", function(e){
 			socket.emit("place_worker", "farm");
 		}
 		else if(building == "warehouse"){
-			
+			if(buildings.warehouse.getNumberOfWorkers() == 0){
+				openPopup("warehouse_popup");
+			}
+			else {
+				socket.emit("place_worker", "warehouse");
+			}
 		}
 		
 		

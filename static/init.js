@@ -45,10 +45,10 @@ function init_game_display(players, game){
 	
 	let warehouse = new Building("warehouse", 90, 120);
 	warehouse.setPosition(200, 275);
-	warehouse.addWorkerSlot(9, 35);
-	warehouse.addWorkerSlot(55, 35);
-	warehouse.addWorkerSlot(9, 73);
-	warehouse.addWorkerSlot(55, 73);
+	warehouse.addWorkerSlot(9, 20);
+	warehouse.addWorkerSlot(55, 20);
+	warehouse.addWorkerSlot(9, 57);
+	warehouse.addWorkerSlot(55, 57);
 	town.appendChild(warehouse.div);
 	
 	let forest = new Building("forest", 120, 90);
@@ -100,7 +100,6 @@ function init_game_display(players, game){
 	//move any moved workers to appropriate building
 	for(p=0; p<game.players.length; p++){
 		let player = players[game.players[p]];
-		console.log(player);
 		for(w=0; w<player.workers_at.length; w++){
 			
 			let worker_location = player.workers_at[w];
@@ -117,8 +116,6 @@ function init_game_display(players, game){
 	}
 	
 	//set the correct player's turn
-	console.log(game);
-	console.log(game.players[game.current_player])
 	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
 		
 	

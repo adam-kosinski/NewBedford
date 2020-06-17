@@ -28,13 +28,92 @@
 			
 			<div id="animation_div"></div>
 			<img id="first_player_token" src="/static/images/first_player_token.png"/>
-			
+			<div id="build_menu_mallet">
+				<img src="/static/images/mallet.png"/>
+				<p>Build Menu</p>
+			</div>
 			
 			<!--Popups-->
 			<div id="popup_background"></div>
-			<!--div id="build_menu">
+			
+			<div id="build_menu" class="popup">
 				<div class="x_button">&#10006;</div>
-			</div--> 
+				<div id="build_menu_title"></div>
+				<div id="build_menu_buildings">
+					<table>
+						<tbody>
+							<tr>
+								<td><img id="bakery-back" src="/static/images/buildings/bakery_back.jpg"/></td>
+								<td><img id="bank-back" src="/static/images/buildings/bank_back.jpg"/></td>
+								<td><img id="brickyard-back" src="/static/images/buildings/brickyard_back.jpg"/></td>
+								<td><img id="chandlery-back" src="/static/images/buildings/chandlery_back.jpg"/></td>
+								<td><img id="cooperage-back" src="/static/images/buildings/cooperage_back.jpg"/></td>
+							</tr>
+							<tr>
+								<td><img id="counting_house-back" src="/static/images/buildings/counting_house_back.jpg"/></td>
+								<td><img id="courthouse-back" src="/static/images/buildings/courthouse_back.jpg"/></td>
+								<td><img id="dry_dock-back" src="/static/images/buildings/dry_dock_back.jpg"/></td>
+								<td><img id="inn-back" src="/static/images/buildings/inn_back.jpg"/></td>
+								<td><img id="lighthouse-back" src="/static/images/buildings/lighthouse_back.jpg"/></td>
+							</tr>
+							<tr>
+								<td><img id="lumber_mill-back" src="/static/images/buildings/lumber_mill_back.jpg"/></td>
+								<td><img id="mansion-back" src="/static/images/buildings/mansion_back.jpg"/></td>
+								<td><img id="market-back" src="/static/images/buildings/market_back.jpg"/></td>
+								<td><img id="municipal_office-back" src="/static/images/buildings/municipal_office_back.jpg"/></td>
+								<td><img id="post_office-back" src="/static/images/buildings/post_office_back.jpg"/></td>
+							</tr>
+							<tr>
+								<td><img id="schoolhouse-back" src="/static/images/buildings/schoolhouse_back.jpg"/></td>
+								<td><img id="seamens_bethel-back" src="/static/images/buildings/seamens_bethel_back.jpg"/></td>
+								<td><img id="tavern-back" src="/static/images/buildings/tavern_back.jpg"/></td>
+								<td><img id="tryworks-back" src="/static/images/buildings/tryworks_back.jpg"/></td>
+								<td><img id="wharf-back" src="/static/images/buildings/wharf_back.jpg"/></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			
+			<div id="build_discount_popup" class="popup">
+				<div class="x_button">&#10006;</div>
+				<img id="building_to_build_display"/>
+				<div id="discount_you_have">
+					<p>You have:</p>
+					<div>
+						<div>
+							<img src="/static/images/wood_3d.png"/>
+							<p id="discount_wood_counter">0</p>
+						</div>
+						<div>
+							<img src="/static/images/food_3d.png"/>
+							<p id="discount_food_counter">0</p>
+						</div>
+						<div>
+							<img src="/static/images/brick_3d.png"/>
+							<p id="discount_brick_counter">0</p>
+						</div>
+					</div>
+				</div>
+				<table id="discount_table">
+					<tbody>
+						<tr>
+							<td>Choose discount item:</td>
+							<td><img id="discount_wood" class="discount_choice_1" src="/static/images/wood_3d.png"/></td>
+							<td><img id="discount_food" class="discount_choice_1" src="/static/images/food_3d.png"/></td>
+							<td><img id="discount_brick" class="discount_choice_1" src="/static/images/brick_3d.png"/></td>
+						</tr>
+						<tr id="second_discount_row">
+							<td>Choose 2nd discount item:</td>
+							<td><img id="discount_wood" class="discount_choice_2" src="/static/images/wood_3d.png"/></td>
+							<td><img id="discount_food" class="discount_choice_2" src="/static/images/food_3d.png"/></td>
+							<td><img id="discount_brick" class="discount_choice_2" src="/static/images/brick_3d.png"/></td>
+						</tr>
+					</tbody>
+				</table>
+				<button id="build_button">Build</button>
+			</div>
+			
 			<div id="warehouse_popup" class="popup">
 				<div class="x_button">&#10006;</div>
 				<p>You get:</p>

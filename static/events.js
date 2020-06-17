@@ -11,8 +11,10 @@ start_button.addEventListener("click", function(){
 	}
 });
 
-document.addEventListener("click", function(e){
-		
+document.addEventListener("click", function(e){	
+	
+	//Buildings
+	
 	if(/building/.test(e.target.className) && /selectable/.test(e.target.className)){		
 		
 		//Checks
@@ -32,14 +34,17 @@ document.addEventListener("click", function(e){
 		}
 		
 		
+		
 		//Do building specific stuff
 		
 		//central town
 		if(building == "town_hall"){
-			
+			build_type = "town_hall";
+			build_menu_select_mode = true;
+			openPopup("build_menu");
 		}
 		else if(building == "general_store"){
-			
+			openPopup("general_store_popup");
 		}
 		else if(building == "forest"){
 			socket.emit("place_worker", "forest");
@@ -66,9 +71,11 @@ document.addEventListener("click", function(e){
 		}
 		
 		
-		//player buildings requiring further input
+		//player buildings requiring further input 
 		else if(building == "courthouse"){
-			
+			build_type = "courthouse";
+			build_menu_select_mode = true;
+			openPopup("build_menu");
 		}
 		else if(building == "dry_dock"){
 			

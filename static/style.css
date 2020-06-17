@@ -83,6 +83,32 @@ p {
 	z-index: 12;
 }
 
+#build_menu_mallet {
+	height: 40px;
+	width: 40px;
+	top: 10px;
+	left: 360px;
+	background-color: antiquewhite;
+	color: rgba(0,0,0,0);
+	cursor: default;
+	border-radius: 10px;
+	border: 1px solid #e9d496;
+	padding: 5px;
+	position: fixed;
+}
+#build_menu_mallet:hover {
+	color: black;
+	box-shadow: 0 0 7px 2px yellow;
+	cursor: pointer;
+}
+#build_menu_mallet img {
+	height: 40px;
+}
+#build_menu_mallet p {
+	left: 50px;
+	padding-left: 10px;
+}
+
 .worker {
 	height: 30px;
 	z-index: 13;

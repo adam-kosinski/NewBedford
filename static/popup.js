@@ -9,10 +9,39 @@ function closePopups(){
 	}
 }
 
-function openPopup(id){ //id should be name of building + "_popup"
+function openPopup(id){ //id should be name of building + "_popup", or "build_menu", or "build_discount_popup"
 	closePopups(); //only have one open at a time
 	
 	//popup specific stuff
+	if(id == "build_menu"){
+		let container = document.getElementById("build_menu_buildings");
+		if(build_menu_select_mode){
+			document.getElementById("build_menu_title").textContent = "Select building to build:";
+			if(! /build_select_on/.test(container.className)){
+				container.className += " build_select_on";
+			}
+		}
+		else {
+			document.getElementById("build_menu_title").textContent = "Available buildings to build";
+			container.className = container.className.replace("build_select_on", "");
+		}
+	}
+	if(id == "build_discount_popup"){
+		document.getElementById("building_to_build_display").src = "/static/images/buildings/" + building_to_build + "_back.jpg";
+		document.getElementById("discount_food_counter").textContent = player_boards[my_name].food_counter.textContent;
+		document.getElementById("discount_wood_counter").textContent = player_boards[my_name].wood_counter.textContent;
+		document.getElementById("discount_brick_counter").textContent = player_boards[my_name].brick_counter.textContent;
+		document.getElementById("second_discount_row").style.display = build_type=="courthouse"? "table-row" : "none";
+		build_button.disabled = true;
+		let choice_1 = document.getElementsByClassName("discount_choice_1");
+		let choice_2 = document.getElementsByClassName("discount_choice_2");
+		for(let i=0; i<3; i++){
+			choice_1[i].style.backgroundColor = "white";
+			choice_2[i].style.backgroundColor = "white";
+		}
+		first_discount = undefined;
+		second_discount = undefined;
+	}
 	if(id == "general_store_popup"){
 		loadStore("general_store");
 		id = "store_popup";
@@ -70,9 +99,83 @@ function loadStore(type){
 //Event handling ----------------------------------------------------
 
 document.addEventListener("click", function(e){
+	
 	if(e.target.className == "x_button"){
 		closePopups();
 	}
+	
+	//build menu
+	if(e.target.id == "build_menu_mallet" || (e.target.parentElement && e.target.parentElement.id == "build_menu_mallet")){
+		build_menu_select_mode = false;
+		openPopup("build_menu");
+	}
+	
+	if(build_menu_select_mode && e.target.tagName == "IMG"){
+		let split = e.target.id.split("-");
+		if(split[1] == "back"){
+			building_to_build = split[0];
+			
+			//open the build_discount_popup if first player, otherwise check if player has resources now
+			if(buildings.town_hall.getNumberOfWorkers() == 0){
+				openPopup("build_discount_popup");
+			}
+			else if(canPlayerBuild(my_name, building_to_build)){
+				socket.emit("build", building_to_build, build_type, getBuildingCost(building_to_build));
+				closePopups();
+			}
+			else {
+				alert("You don't have enough resources to build this building");
+			}
+		}
+	}
+	
+	
+	
+	//build discount popup
+	if(e.target.className == "discount_choice_1"){
+		if(build_type == "town_hall" || (build_type == "courthouse" && second_discount)){
+			build_button.disabled = false;
+			build_button.style.cursor = "pointer";
+		}
+		
+		let same_row = document.getElementsByClassName("discount_choice_1");
+		for(let i=0; i<same_row.length; i++){
+			same_row[i].style.backgroundColor = "white";
+		}
+		e.target.style.backgroundColor = "orange";
+		
+		first_discount = e.target.id.split("_")[1];
+	}
+	
+	if(e.target.className == "discount_choice_2"){
+		if(first_discount){
+			build_button.disabled = false;
+			build_button.style.cursor = "pointer";			
+		}
+		
+		let same_row = document.getElementsByClassName("discount_choice_2");
+		for(let i=0; i<same_row.length; i++){
+			same_row[i].style.backgroundColor = "white";
+		}
+		e.target.style.backgroundColor = "orange";
+		
+		second_discount = e.target.id.split("_")[1];
+	}
+	
+	if(e.target.id == "build_button"){
+		let discount = build_type=="courthouse"? [first_discount, second_discount] : [first_discount];
+		
+		if(canPlayerBuild(my_name, building_to_build, discount)){
+			console.log("building", building_to_build);
+			let cost = getBuildingCost(building_to_build, discount);
+			socket.emit("build", building_to_build, build_type, cost);
+			closePopups();
+		}
+		else {
+			alert("You don't have enough resources to build this building with the chosen discount.\n\nIf building with the courthouse, this includes paying the courthouse owner.");
+		}
+	}
+	
 	
 	
 	//warehouse
@@ -100,9 +203,8 @@ document.addEventListener("click", function(e){
 			brick: Number(brick_to_sell.textContent)
 		}
 		console.log(sell_data)
-		//TODO: emit
+		socket.emit("place_worker", opened_store, sell_data);
 		closePopups();
-		
 	}
 	else if(e.target.id == "food_plus"){
 		let my_food = Number(player_boards[my_name].food_counter.textContent);

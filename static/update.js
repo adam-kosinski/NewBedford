@@ -12,18 +12,22 @@ function changeParent(object, new_parent){
 	object.style.left = new_left + "px";
 }
 
-function getLocation(what, relative_to, name=undefined){
+function getLocation(what, relative_to, name=undefined, use_center=false){
 	//what: an element, a building (for which the center of it is returned), or anything in PlayerBoard.location
 	//relative_to: top-left of this element is considered (0,0)
 	//name: of player, if in a playerboard
+	//use_center: for HTMLElements, returns location of center of element if true
 	
 	if(what instanceof HTMLElement){
 		let box = what.getBoundingClientRect();
 		let relative_to_box = relative_to.getBoundingClientRect();
-				
+		
+		let x_offset = use_center ? 0.5*box.width : 0;
+		let y_offset = use_center ? 0.5*box.height : 0;
+		
 		return {
-			x: box.x - relative_to_box.x,
-			y: box.y - relative_to_box.y
+			x: box.x + x_offset - relative_to_box.x,
+			y: box.y + y_offset - relative_to_box.y
 		};
 	}
 	else if(buildings.hasOwnProperty(what)){
@@ -49,7 +53,7 @@ function getLocation(what, relative_to, name=undefined){
 }
 
 
-let makeResourceAndAnimate = function(name, thing, start_pos, emit_done=false){ //start_pos relative to player_board_container
+let makeResource = function(thing, startpoint){
 	//create resource
 	let resource = document.createElement("img");
 	resource.className = "animated_resource";
@@ -59,54 +63,45 @@ let makeResourceAndAnimate = function(name, thing, start_pos, emit_done=false){ 
 		case "brick": resource.src = "/static/images/brick_3d.png"; break;
 		case "money": resource.src = "/static/images/small_coin_front.png"; break;
 	}
-	resource.style.top = start_pos.y + "px";
-	resource.style.left = start_pos.x + "px";
+	resource.style.top = startpoint.y + "px";
+	resource.style.left = startpoint.x + "px";
 	animation_div.appendChild(resource);
 	
-	//animate it
-	let endpoint = getLocation(thing, animation_div, name);
-	moveAnimate(resource, player_board_container, start_pos, endpoint, give_animation_speed, function(){ //see animate.js
-		resource.remove();
-		//add one to receiving player's counter
-		let counter = player_boards[name][thing + "_counter"];
-		counter.textContent = Number(counter.textContent) + 1;
-		
-		if(emit_done){
-			socket.emit("done");
-		}
-	});
+	return resource;
 }
 
 
-//Function to give resources (food, wood, bricks, money - not whales) to a player. Handles both counter values and animations
-//Resources can come from buildings, other players, or out of thin air (no animation).
+//Function to give resources (food, wood, bricks, money - not whales) to or from a player. Handles both counter values and animations
+//Resources can come from buildings, other players, HTMLElements, or out of thin air (no animation).
 //Only money is allowed to move from one player to another.
 //There's no check if other players have the resources; it's simply subtracted from the counter - check this before calling.
 
-//Two ways of calling - one for generic give, second for giving one item. The first uses the second
+//Two ways of calling - one for generic give (give()), second for giving one item (give_one()). The first uses the second
 
-function give(name, data, from){
-	//name: name of player to give resource to
+function give(to, data, from){
+	//to: name of player to give resource to, building to "give" resource to, or HTMLElement
 	//data: object of {thing: amount, thing: amount, etc.} - resources must be "food" "wood" "brick" or "money"
-	//from: name of a building, or name of a player.
-		//If left undefined, will just increment the counter, no animation
-		//If resource is from a player, it must be 'money'
+	//from: name of a building, or name of a player, or HTMLElement
+		//If resource is given to a player from a player, must be "money"
 	
-	let resources = Object.keys(data); //array of property names - "food" "wood" etc.
-	//keep giving the first thing in 'data' until we run out
+	//if giving to a player and 'from' is undefined, or if taking ("giving") from a player and 'to' is undefined, will just change the counter w/o animation
+
 	
+	//populate an array with resources to give in a row
+	let give_array = [];
+	for(let resource in data){
+		for(let i=0; i<data[resource]; i++){
+			give_array.push(resource);
+		}
+	}
+	
+	//give them with pauses in between
 	let give_next = function(){
-		let this_resource = resources[0];
-		if(data[this_resource] > 1){
-			data[resources[0]]--;
-		}
-		else {
-			resources.splice(0,1); //done with this property
-		}
+		let this_resource = give_array.splice(0,1)[0];
 		
-		give_one(name, this_resource, from, resources.length==0); //emit done when animation finishes if we just used the last resource
+		give_one(to, this_resource, from, give_array.length==0); //emit done when animation finishes if we just used the last resource
 		
-		if(resources.length > 0){
+		if(give_array.length > 0){
 			window.setTimeout(give_next, time_between_gives);
 		}
 	}
@@ -114,85 +109,110 @@ function give(name, data, from){
 }
 
 
-function give_one(name, thing, from, emit_done=false){
-	//name: name of player to give resource to
-	//amount: amount of resource to give
+function give_one(to, thing, from, emit_done=false){
+	//to: name of player to give resource to, name of a building, or HTMLElement
 	//thing: "food" "wood" "brick" or "money"
-	//from: name of a building, or name of a player.
-		//If left undefined, will just increment the counter, no animation
-		//If resource is from a player, it must be 'money'
+	//from: name of a building, or name of a player, or HTMLElement
+		//If resource is to a player from a player, it must be 'money'
 	//emit_done: if true, will emit the "done" event when the animation finishes
 	
+	//if giving to a player and 'from' is undefined, or if "giving" from a player and 'to' is undefined, will just change the counter w/o animation
+	
 	//check if valid inputs
-	if(!player_boards.hasOwnProperty(name)){
-		throw new Error("Cannot give stuff to a player not in player_boards");
+	if(! (player_boards.hasOwnProperty(to) || buildings.hasOwnProperty(to) || to instanceof HTMLElement) ){
+		throw new Error("Cannot give stuff to something that's not a player, building, or HTMLElement");
 	}
 	if(!(thing == "food" || thing == "wood" || thing == "brick" || thing == "money")){
 		throw new Error("Cannot give " + thing + ", invalid resource type");
 	}
-	if(player_boards.hasOwnProperty(from)){
-		if(thing != "money"){
-			throw new Error("Cannot give anything but money from one player to another");
-		}
+	if(! (player_boards.hasOwnProperty(from) || buildings.hasOwnProperty(from) || from instanceof HTMLElement) ){
+		throw new Error("Cannot give stuff from something that's not a player, building, or HTMLElement");
 	}
+	if(player_boards.hasOwnProperty(to) && player_boards.hasOwnProperty(from) && thing != "money"){
+		throw new Error("Cannot give anything but money from one player to another");
+	}
+	
+	//determine animation args based on what 'from' and 'to' are
+	
+	let resource;
+	let scroll_to_match;
+	let startpoint;
+	let endpoint;
+	let finish_function = function(){ //default just remove the resource
+		resource.remove();
+		if(emit_done){socket.emit("done");}
+	};
 	
 	//check if coming from a player
 	if(player_boards.hasOwnProperty(from)){
 		
-		//subtract one from the money counter of the giving player
+		//subtract one from the counter of the giving player
 		let counter = player_boards[from][thing + "_counter"];
 		counter.textContent = Number(counter.textContent) - 1;
 		
-		let start_pos = getLocation(thing, animation_div, from); //from is a name here
-		makeResourceAndAnimate(name, thing, start_pos, emit_done);
+		if(to == undefined){
+			//return now w/o animation
+			if(emit_done){socket.emit("done");}
+			return;
+		}
+		
+		startpoint = getLocation(thing, animation_div, from); //from is a name here
 	}
 	//check if coming from a building
 	else if(buildings.hasOwnProperty(from)){
-		let start_pos = getLocation(from, animation_div); //from is a building here
-		makeResourceAndAnimate(name, thing, start_pos, emit_done);
+		startpoint = getLocation(from, animation_div); //from is a building here
 	}
-	else {
-		//just increment the receiving player's counter w/o animation
-		let counter = player_boards[name][thing + "_counter"];
-		counter.textContent = Number(counter.textContent) + 1;
+	//check if coming from an HTMLElement
+	else if(from instanceof HTMLElement){
+		startpoint = getLocation(from, animation_div, undefined, true);
+	}
+	
+	
+	//check if going to a player
+	if(player_boards.hasOwnProperty(to)){		
+		if(from == undefined){
+			//increment the counter now and return w/o animation
+			let counter = player_boards[to][thing + "_counter"];
+			counter.textContent = Number(counter.textContent) + 1;
+			if(emit_done){socket.emit("done");}
+			return;
+		}
 		
-		if(emit_done){
-			socket.emit("done");
+		scroll_to_match = player_board_container;
+		endpoint = getLocation(thing, animation_div, to);
+		finish_function = function(){
+			resource.remove();
+			
+			//add one to receiving player's counter
+			let counter = player_boards[to][thing + "_counter"];
+			counter.textContent = Number(counter.textContent) + 1;
+			
+			if(emit_done){socket.emit("done");}
 		}
 	}
+	//check if going to a building
+	else if(buildings.hasOwnProperty(to)){
+		scroll_to_match = game_div;
+		endpoint = getLocation(to, animation_div);
+	}
+	//check if going to an HTMLElement
+	else if(to instanceof HTMLElement){
+		scroll_to_match = to;
+		endpoint = getLocation(to, animation_div, undefined, true);
+	}
 	
+	
+	//if execution got here, then we should be doing an animation. If somehow startpoint and endpoint aren't defined, something went wrong, throw an error
+	if(startpoint && endpoint){
+		resource = makeResource(thing, startpoint);
+		moveAnimate(resource, scroll_to_match, startpoint, endpoint, give_animation_speed, finish_function);
+	}
+	else {
+		throw new Error("Error defining startpoint or endpoint in give_one()");
+	}
 }
 
 
-
-
-
-
-//Function to reduce a player's resources. Just decrements the counter the appropriate amount
-
-function take(amount, thing, name){
-	//amount: amount of resource to take
-	//thing: "food" "wood" "brick" or "money"
-	//name: name of player to take from
-	
-	//verify inputs are valid
-	if(amount <= 0){
-		throw new Error("Cannot take 0 or less resources, " + amount + " requested.");
-	}
-	if(!(thing == "food" || thing == "wood" || thing == "brick" || thing == "money")){
-		throw new Error("Cannot take " + thing + ", invalid resource type");
-	}
-	if(!player_boards.hasOwnProperty(name)){
-		throw new Error("Cannot take from a player (" + name + ") who doesn't have a board");
-	}
-	
-	//remove
-	let counter = player_boards[name][thing + "_counter"];
-	counter.textContent = Number(counter.textContent) - amount;
-	
-	
-	socket.emit("done");
-}
 
 
 

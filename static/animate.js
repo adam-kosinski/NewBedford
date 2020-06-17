@@ -47,3 +47,35 @@ function moveAnimate(object, scroll_to_match, startpoint, endpoint, speed, finis
 	
 	window.requestAnimationFrame(step);
 }
+
+
+
+//function to animate an object fading in/out
+
+function fadeAnimate(object, start_opacity, end_opacity, duration, finish_function){
+	//object: the HTML element to animate
+	//start_opacity: value between 0 and 1
+	//end_opacity: value between 0 and 1
+	//duration: in ms
+	//finish_function (optional): function to run when done animating
+	
+	let t_start = performance.now();
+	let step = function(t_now){
+		let fraction = (t_now - t_start) / duration; //all in ms
+		
+		if(fraction >= 1){
+			object.style.opacity = end_opacity;
+			animation_in_progress = false;
+			if(finish_function){
+				finish_function();
+			}
+		}
+		else {
+			animation_in_progress = true;
+			object.style.opacity = start_opacity + (end_opacity - start_opacity)*fraction;
+			window.requestAnimationFrame(step);
+		}
+	}
+	
+	window.requestAnimationFrame(step);
+}

@@ -1,12 +1,13 @@
 /*
 Notes
-Put building definitions in a separate module
-Make spectator (late) connection work better - low priority
+
+Change dialog windows to my own popups - I think leaving one open too long can mess with the socket connection
+
+Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
-For the take() function (update.js), consider making background of the counters go red briefly then fade back to normal
- - better idea: make the resource go to the building where they're being used, similar animation to the give() function
- 
- FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
+Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
+
+FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
 */
 
 
@@ -140,10 +141,18 @@ class Game {
 		this.ocean = new Ocean(this.players.length);
 		this.whaling_result = [];
 		
-		
-		initBuildings();
 		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
+		initBuildings();
+		
+		for(let b in buildings){
+			if(buildings[b].in_town){
+				this.buildings.push(buildings[b]);
+			}
+			else {
+				this.unbuilt.push(buildings[b]);
+			}
+		}
 	}
 	nextTurn(){
 		this.current_player++;
@@ -249,15 +258,6 @@ io.on("connection", function(socket) {
 		io.sockets.emit("player_connection", players);
 	});
 	
-	//remove player from memory if player says to
-	socket.on("remove_player", function(){
-		if(id_to_name.hasOwnProperty(socket.id)){
-			console.log(id_to_name[socket.id]+" was removed from the player list (id: " + socket.id + ")");
-			delete players[id_to_name[socket.id]];
-			delete id_to_name[socket.id];
-		}
-	});
-	
 	socket.on("get_state", function(callback){
 		callback(players, game); //if game is undefined, tells them no game currently happening
 	});
@@ -290,8 +290,23 @@ io.on("connection", function(socket) {
 		buildings[building].placeWorker(id_to_name[socket.id], data);
 	});
 	
-	socket.on("build", function(building){ //building is a string
+	socket.on("build", function(building, build_type, cost){ //building is a string, build_type is "town_hall" or "courthouse", cost is an object: {food:int, wood:int, brick:int, money:int}
+		buildings[building].owner = id_to_name[socket.id];
 		
+		//move from unbuilt buildings to built buildings
+		let unbuilt_idx;
+		for(let i=0; i<game.unbuilt.length; i++){
+			if(game.unbuilt[i].type == building){
+				unbuilt_idx = i;
+				break;
+			}
+		}
+		let obj = game.unbuilt.splice(unbuilt_idx, 1)[0];
+		game.buildings.push(obj);
+		
+		//place worker, let the town_hall/courthouse handle the rest
+		let data = {building_to_build: building, cost: cost}
+		buildings[build_type].placeWorker(id_to_name[socket.id], data);
 	});
 	
 	socket.on("choose_whale", function(whale, ship){ //whale: int, ship: 0|1
@@ -355,9 +370,71 @@ function initBuildings(){
 	buildings = {}; //clear any previous state
 
 	//central town
-	new Building("town_hall", true, function(name){}, function(name){});
+	new Building("town_hall", true,
+		function(name, data){
+			let cost = data.cost;
+			queue.push(function(){
+				io.sockets.emit("give","town_hall",cost,name);
+				players[name].food -= cost.food;
+				players[name].wood -= cost.wood;
+				players[name].brick -= cost.brick;
+				players[name].money -= cost.money;
+				console.log("emitted give to town hall");
+			});
+			queue.push(function(){
+				io.sockets.emit("build", name, data.building_to_build);
+				console.log("emitted build");
+			});
+		},
+		function(name, data){ //happens to be the same function for first/normal here, but easiest to just copy paste
+			let cost = data.cost;
+			queue.push(function(){
+				io.sockets.emit("give","town_hall",cost,name);
+				players[name].food -= cost.food;
+				players[name].wood -= cost.wood;
+				players[name].brick -= cost.brick;
+				players[name].money -= cost.money;
+				console.log("emitted give to town hall");
+			});
+			queue.push(function(){
+				io.sockets.emit("build", name, data.building_to_build);
+				console.log("emitted build");
+			});
+		}
+	);
 
-	new Building("general_store", true, function(name){}, function(name){});
+	new Building("general_store", true,
+		function(name, data){ //data here is {resource: amount_sold, etc.}
+			queue.push(function(){
+				io.sockets.emit("give", "general_store", data, name);
+				players[name].food -= data.food;
+				players[name].wood -= data.wood;
+				players[name].brick -= data.brick;
+				console.log("queue emitting general_store sell");
+			});
+			queue.push(function(){
+				let value = data.food + data.wood + 2*data.brick;
+				io.sockets.emit("give", name, {money: value + 1}, "general_store");
+				players[name].money += value + 1;
+				console.log("first player");
+			});
+		},
+		function(name, data){
+			queue.push(function(){
+				io.sockets.emit("give", "general_store", data, name);
+				players[name].food -= data.food;
+				players[name].wood -= data.wood;
+				players[name].brick -= data.brick;
+				console.log("queue emitting general_store sell");
+			});
+			queue.push(function(){
+				let value = data.food + data.wood + 2*data.brick;
+				io.sockets.emit("give", name, {money: value}, "general_store");
+				players[name].money += value;
+				console.log("later player");
+			});
+		}
+	);
 
 	new Building("forest", true,
 		function(name){
@@ -406,6 +483,7 @@ function initBuildings(){
 		function(name){
 			queue.push(function(){
 				io.sockets.emit("give", name, {brick: 1}, "warehouse");
+				players[name].brick += 1;
 				console.log("queue emitting warehouse give");
 			});
 		}

@@ -52,7 +52,7 @@ socket.emit("get_state", function(players, game){
 socket.on("player_connection", function(players){
 	//update player display on home screen
 	player_display.innerHTML = "";
-	for(name in players){
+	for(let name in players){
 		if(players[name].connected){
 			let div = document.createElement("div");
 			div.id = name + "_home_screen";
@@ -63,7 +63,7 @@ socket.on("player_connection", function(players){
 	
 	//indicate disconnected in game GUI if game active
 	if(game_active){
-		for(name in players){
+		for(let name in players){
 			if(player_boards.hasOwnProperty(name)){
 				if(players[name].connected){
 					player_boards[name].disconnected_div.style.display = "none";
@@ -89,6 +89,7 @@ socket.on("state", function(players, game){
 
 
 //events requiring "done" emit when finished
+
 socket.on("move_worker", function(name, where){
 	moveWorker(name, where); //see update.js
 });
@@ -97,13 +98,16 @@ socket.on("give", function(name, data, from){
 	give(name, data, from); //see update.js
 });
 
-socket.on("take", function(amount, thing, name){
-	take(amount, thing, name); //see update.js
+socket.on("build", function(name, building){
+	document.getElementById(building + "-back").remove();
+	building_areas[name].build(building);
 });
 
 socket.on("set_turn", function(name){
 	setTurn(name); //see update.js
 });
+
+
 
 socket.on("banner", function(message){
 	

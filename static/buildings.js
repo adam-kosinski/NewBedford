@@ -117,7 +117,7 @@ class BuildingArea {
 		building_areas[name] = this;
 	}
 	
-	build(building_name){
+	build(building_name, animate=true){
 		//calculate location (relative to town div)
 		/*method:
 		We can calculate a pre-defined sequence of locations (center of building) w/ respect to the center of the central town, in the top-right build space
@@ -169,5 +169,84 @@ class BuildingArea {
 		let building = new Building(building_name);
 		building.setPosition(pos.x, pos.y);
 		this.buildings[n] = building_name;
+		
+		if(animate){
+			building.div.style.opacity = 0;
+			fadeAnimate(building.div, 0, 1, building_fade_in_time, function(){
+				socket.emit("done");
+			});
+		}
+		
+		//no need to emit "done" if not animating - the server only ever builds from the queue w/ animation
 	}
+}
+
+
+
+
+
+building_costs = {
+	"bakery": {food: 2, wood: 0, brick: 1, money: 0},
+	"bank": {food: 0, wood: 0, brick: 4, money: 0},
+	"brickyard": {food: 0, wood: 0, brick: 4, money: 0},
+	"chandlery": {food: 2, wood: 2, brick: 2, money: 0},
+	"cooperage": {food: 0, wood: 4, brick: 0, money: 0},
+	"counting_house": {food: 2, wood: 3, brick: 0, money: 0},
+	"courthouse": {food: 0, wood: 5, brick: 1, money: 0},
+	"dry_dock": {food: 0, wood: 2, brick: 2, money: 0},
+	"inn": {food: 2, wood: 0, brick: 2, money: 0},
+	"lighthouse": {food: 0, wood: 2, brick: 2, money: 0},
+	"lumber_mill": {food: 0, wood: 3, brick: 1, money: 0},
+	"mansion": {food: 0, wood: 4, brick: 0, money: 10},
+	"market": {food: 1, wood: 1, brick: 1, money: 0},
+	"municipal_office": {food: 0, wood: 4, brick: 4, money: 0},
+	"post_office": {food: 0, wood: 2, brick: 1, money: 0},
+	"schoolhouse": {food: 2, wood: 2, brick: 1, money: 0},
+	"seamens_bethel": {food: 0, wood: 5, brick: 5, money: 0},
+	"tavern": {food: 3, wood: 0, brick: 2, money: 0},
+	"tryworks": {food: 0, wood: 0, brick: 3, money: 0},
+	"wharf": {food: 0, wood: 3, brick: 1, money: 0}
+};
+
+
+//function to see if player has enough resources to build something
+function canPlayerBuild(name, building, discounts=[]){
+	//name: player name
+	//building: name of building
+	//discounts: array of strings, each string counts as minus 1 of that resource
+	
+	let n_food = Number(player_boards[name].food_counter.textContent);
+	let n_wood = Number(player_boards[name].wood_counter.textContent);
+	let n_brick = Number(player_boards[name].brick_counter.textContent);
+	let n_money = Number(player_boards[name].money_counter.textContent);
+	
+	let cost = getBuildingCost(building, discounts);
+	
+	//add one to money cost if it's courthouse build and the courthouse isn't my building
+	if(build_type == "courthouse" && !building_areas[name].buildings.includes("courthouse")){
+		cost.money++;
+	}
+
+	console.log(n_food, n_wood, n_brick, n_money);
+	console.log(cost.food, cost.wood, cost.brick, cost.money);
+	
+	return (n_food >= cost.food) && (n_wood >= cost.wood) && (n_brick >= cost.brick) && (n_money >= cost.money);
+}
+
+function getBuildingCost(building, discounts=[]){
+	//building: name of building
+	//discounts: array of strings, each string counts as minus 1 of that resource
+	
+	let cost = {};
+	Object.assign(cost, building_costs[building]); //need a shallow copy to avoid changing reference costs
+	
+	for(let i=0; i<discounts.length; i++){
+		switch(discounts[i]){
+			case "food": cost.food = Math.max(cost.food-1, 0); break;
+			case "wood": cost.wood = Math.max(cost.wood-1, 0); break;
+			case "brick": cost.brick = Math.max(cost.brick-1, 0); break;
+		}
+	}
+	
+	return cost;
 }

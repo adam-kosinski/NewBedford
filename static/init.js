@@ -94,7 +94,9 @@ function init_game_display(players, game){
 	//build any buildings already built
 	for(let b=0; b<game.buildings.length; b++){
 		let building = game.buildings[b];
-		building_areas[building.owner].build(building.type);
+		if(building.owner){
+			building_areas[building.owner].build(building.type, false); //false - don't animate
+		}
 	}
 	
 	//move any moved workers to appropriate building

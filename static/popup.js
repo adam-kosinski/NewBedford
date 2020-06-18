@@ -17,13 +17,11 @@ function openPopup(id){ //id should be name of building + "_popup", or "build_me
 		let container = document.getElementById("build_menu_buildings");
 		if(build_menu_select_mode){
 			document.getElementById("build_menu_title").textContent = "Select building to build:";
-			if(! /build_select_on/.test(container.className)){
-				container.className += " build_select_on";
-			}
+			container.classList.add("build_select_on");
 		}
 		else {
 			document.getElementById("build_menu_title").textContent = "Available buildings to build";
-			container.className = container.className.replace("build_select_on", "");
+			container.classList.remove("build_select_on");
 		}
 	}
 	if(id == "build_discount_popup"){
@@ -35,9 +33,21 @@ function openPopup(id){ //id should be name of building + "_popup", or "build_me
 		build_button.disabled = true;
 		let choice_1 = document.getElementsByClassName("discount_choice_1");
 		let choice_2 = document.getElementsByClassName("discount_choice_2");
+		let cost = getBuildingCost(building_to_build);
 		for(let i=0; i<3; i++){
 			choice_1[i].style.backgroundColor = "white";
 			choice_2[i].style.backgroundColor = "white";
+			
+			//don't display it if cost of that item is 0
+			let resource = choice_1[i].className.match(/food|wood|brick/)[0];
+			if(cost[resource] == 0){
+				choice_1[i].style.display = "none";
+				choice_2[i].style.display = "none";
+			}
+			else {
+				choice_1[i].style.display = "inline";
+				choice_2[i].style.display = "inline";
+			}
 		}
 		first_discount = undefined;
 		second_discount = undefined;
@@ -116,12 +126,17 @@ document.addEventListener("click", function(e){
 			building_to_build = split[0];
 			
 			//open the build_discount_popup if first player, otherwise check if player has resources now
-			if(buildings.town_hall.getNumberOfWorkers() == 0){
+			if((build_type == "town_hall" && buildings.town_hall.getNumberOfWorkers() == 0) ||
+			   (build_type == "courthouse" && buildings.courthouse.getNumberOfWorkers() == 0))
+			{
 				openPopup("build_discount_popup");
 			}
-			else if(canPlayerBuild(my_name, building_to_build)){
-				socket.emit("build", building_to_build, build_type, getBuildingCost(building_to_build));
-				closePopups();
+			else if(canPlayerBuild(my_name, building_to_build)){ //will only trigger w/ town hall b/c only one player allowed on the courthouse
+				let yes_build = confirm("Confirm build (normal price)?");
+				if(yes_build){
+					socket.emit("build", building_to_build, build_type, getBuildingCost(building_to_build));
+					closePopups();
+				}
 			}
 			else {
 				alert("You don't have enough resources to build this building");
@@ -132,7 +147,7 @@ document.addEventListener("click", function(e){
 	
 	
 	//build discount popup
-	if(e.target.className == "discount_choice_1"){
+	if(e.target.classList.contains("discount_choice_1")){
 		if(build_type == "town_hall" || (build_type == "courthouse" && second_discount)){
 			build_button.disabled = false;
 			build_button.style.cursor = "pointer";
@@ -144,10 +159,10 @@ document.addEventListener("click", function(e){
 		}
 		e.target.style.backgroundColor = "orange";
 		
-		first_discount = e.target.id.split("_")[1];
+		first_discount = e.target.className.match(/food|wood|brick/)[0];
 	}
 	
-	if(e.target.className == "discount_choice_2"){
+	if(e.target.classList.contains("discount_choice_2")){
 		if(first_discount){
 			build_button.disabled = false;
 			build_button.style.cursor = "pointer";			
@@ -159,14 +174,14 @@ document.addEventListener("click", function(e){
 		}
 		e.target.style.backgroundColor = "orange";
 		
-		second_discount = e.target.id.split("_")[1];
+		second_discount = e.target.className.match(/food|wood|brick/)[0];
 	}
 	
 	if(e.target.id == "build_button"){
 		let discount = build_type=="courthouse"? [first_discount, second_discount] : [first_discount];
-		
 		if(canPlayerBuild(my_name, building_to_build, discount)){
 			console.log("building", building_to_build);
+			console.log("discount", discount);
 			let cost = getBuildingCost(building_to_build, discount);
 			socket.emit("build", building_to_build, build_type, cost);
 			closePopups();

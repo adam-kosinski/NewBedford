@@ -3,6 +3,8 @@ Notes
 
 Change dialog windows to my own popups - I think leaving one open too long can mess with the socket connection
 
+Discount popup shouldn't show discount items that wouldn't help (if cost is 0 of that item)
+
 Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
@@ -49,10 +51,10 @@ class Player {
 		
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
 		this.ships = [new Ship(), new Ship()];
-		this.food = 0;
-		this.wood = 0;
-		this.brick = 0;
-		this.money = 0;
+		this.food = 20;
+		this.wood = 20;
+		this.brick = 20;
+		this.money = 20;
 		
 		this.right_whales = 0;
 		this.bowhead_whales = 0;
@@ -90,6 +92,7 @@ class Building {
 		}
 		else {console.log("Couldn't find available worker in Player object");}
 		
+		
 		//move worker
 		this.workers++;
 		let building_name = this.type; //can't reference 'this' in the queue
@@ -97,6 +100,17 @@ class Building {
 			io.sockets.emit("move_worker", name, building_name);
 			console.log("queue emitting move_worker");
 		});
+		
+		
+		//pay owner if not a town building and don't own the building
+		if(!this.in_town && name != this.owner){
+			let owner = this.owner;
+			queue.push(function(){
+				io.sockets.emit("give", owner, {money: 1}, name);
+				console.log("queue emitting pay building owner");
+			});
+		}
+		
 		
 		//do the building action
 		if(this.workers == 1){
@@ -510,7 +524,21 @@ function initBuildings(){
 
 	new Building("counting_house", false, function(name){});
 
-	new Building("courthouse", false, function(name){});
+	new Building("courthouse", false, function(name, data){
+		let cost = data.cost;
+			queue.push(function(){
+				io.sockets.emit("give","courthouse",cost,name);
+				players[name].food -= cost.food;
+				players[name].wood -= cost.wood;
+				players[name].brick -= cost.brick;
+				players[name].money -= cost.money;
+				console.log("emitted give to town hall");
+			});
+			queue.push(function(){
+				io.sockets.emit("build", name, data.building_to_build);
+				console.log("emitted build");
+			});
+	});
 
 	new Building("dry_dock", false, function(name){});
 

@@ -15,7 +15,7 @@ document.addEventListener("click", function(e){
 	
 	//Buildings
 	
-	if(/building/.test(e.target.className) && /selectable/.test(e.target.className)){		
+	if(e.target.classList.contains("building") && e.target.classList.contains("selectable")){		
 		
 		//Checks
 		

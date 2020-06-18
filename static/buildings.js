@@ -76,12 +76,10 @@ class Building {
 	setSelectable(selectable){ //arg is true/false
 		this.selectable = selectable;
 		if(selectable == true){
-			if(! /selectable/.test(this.div.className)){
-				this.div.className += " selectable";
-			}
+			this.div.classList.add("selectable");
 		}
 		else {
-			this.div.className = this.div.className.replace("selectable", "");
+			this.div.classList.remove("selectable");
 		}
 	}
 }

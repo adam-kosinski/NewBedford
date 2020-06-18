@@ -96,6 +96,7 @@ function init_game_display(players, game){
 		let building = game.buildings[b];
 		if(building.owner){
 			building_areas[building.owner].build(building.type, false); //false - don't animate
+			document.getElementById(building.type + "-back").remove(); //remove from build menu
 		}
 	}
 	

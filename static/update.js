@@ -53,6 +53,7 @@ function getLocation(what, relative_to, name=undefined, use_center=false){
 }
 
 
+
 let makeResource = function(thing, startpoint){
 	//create resource
 	let resource = document.createElement("img");
@@ -276,6 +277,110 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		throw new Error("Cannot move worker to " + where +", invalid destination");
 	}
 }
+
+
+
+
+function moveShip(name, which_ship, where, priority=1, emit_done=true){
+	//name: player name
+	//which_ship: "small" or "big"
+	/*where: One of -
+		"player_board" (to return to storage)
+		"dock" (to prepare it)
+		a number 1-6 to launch it
+		"to_shore" (1 row)
+		"to_sea" (1 row)
+		"right" or "left" (to change priority position)
+	*/
+	//priority (optional): 1, 2, or 3. Only used for when 'where'= 1-6 (launching)
+	//emit_done (optional): whether or not to emit the "done" event when finished
+	
+	//note: ship's z-index will be set to 4-priority (priority 1,2,3 maps to z-index: 3,2,1)
+	
+	
+	let ship = player_boards[name][which_ship + "_ship"];
+	let startpoint = getLocation(ship, animation_div);
+	
+	if(where == "player_board"){
+		let endpoint = getLocation(which_ship + "_ship_storage", animation_div, name);
+		
+		changeParent(ship, animation_div);
+		moveAnimate(ship, player_board_container, startpoint, endpoint, ship_fast_animation_speed, function(){
+			changeParent(ship, player_boards[name].div);
+			if(emit_done){socket.emit("done");}
+		});
+	}
+	else if(where == "dock"){
+		let dock_slot = getOpenDockSlot();
+		let endpoint = getLocation(dock_slot, animation_div); //this is top middle of slot, want top-left of ship so need to modify a bit
+		endpoint.x -= 0.5*ship.width;
+		
+		console.log(dock_slot.width, ship.width);
+		
+		changeParent(ship, animation_div);
+		moveAnimate(ship, ocean, startpoint, endpoint, ship_fast_animation_speed, function(){
+			changeParent(ship, dock_slot);
+			if(emit_done){socket.emit("done");}
+		});
+	}
+	else if(typeof where == "number"){
+		//go to the appropriate food label (should be straight down from dock), then horizontally into position
+		
+		let ocean_pos = getLocation(ocean, animation_div);
+		
+		//get offsets to final destination relative to the ocean
+		let x_offset = whaling_track_origin.x + (priority-1)*whaling_priority_offset;
+		let y_offset = whaling_track_origin.y + (where+1)*whaling_row_offset;
+		
+		let endpoint_1 = {
+			x: ocean_pos.x + ocean_center_x - 0.5*ship.width,
+			y: ocean_pos.y + y_offset - 0.6*ship.height
+		};
+		let additional_x_offset = x_offset - ocean_center_x; //have to calculate endpoint_2 after we get there, b/c scrolling might have happened. Add this to the ship's x position to get endpoint_2
+		
+		//animate the steps in a row
+		changeParent(ship, animation_div);
+		moveAnimate(ship, ocean, startpoint, endpoint_1, ship_medium_animation_speed, function(){
+			let startpoint_2 = getLocation(ship, animation_div);
+			let endpoint_2 = {
+				x: startpoint_2.x + additional_x_offset,
+				y: startpoint_2.y
+			};
+			moveAnimate(ship, ocean, startpoint_2, endpoint_2, ship_slow_animation_speed, function(){
+				changeParent(ship, ocean);
+				ship.style.zIndex = 4-priority; //priority 1,2,3 maps to z-index 3,2,1
+				if(emit_done){socket.emit("done");}
+			});
+		});
+		
+	}
+	else if(where == "to_shore" || where == "to_sea"){
+		let endpoint = {
+			x: startpoint.x,
+			y: startpoint.y + (where=="to_shore"? -whaling_row_offset : whaling_row_offset)
+		};
+		
+		changeParent(ship, animation_div);
+		moveAnimate(ship, ocean, startpoint, endpoint, ship_slow_animation_speed, function(){
+			changeParent(ship, ocean);
+			if(emit_done){socket.emit("done");}
+		});
+	}
+	else if(where == "left" || where == "right"){
+		let endpoint = {
+			x: startpoint.x + (where=="left"? -whaling_priority_offset : whaling_priority_offset),
+			y: startpoint.y
+		};
+		
+		changeParent(ship, animation_div);
+		moveAnimate(ship, ocean, startpoint, endpoint, ship_slow_animation_speed, function(){
+			ship.style.zIndex = Number(ship.style.zIndex) + (where=="left"? 1 : -1);
+			changeParent(ship, ocean);
+			if(emit_done){socket.emit("done");}
+		});
+	}
+}
+
 
 
 function updateSelectableBuildings(){

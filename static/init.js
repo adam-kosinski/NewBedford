@@ -5,11 +5,23 @@ function init_game_display(players, game){
 	console.log("Initting game display");
 	console.log(players, game);
 	
-	//add town image
-	let town_image= document.createElement("img");
+	home_screen.style.display = "none";
+	game_div.style.display = "block";
+	
+	
+	//add town and ocean images
+	let town_image = document.createElement("img");
 	town_image.src = "/static/images/town.png";
 	town_image.id = "town_image";
 	town.appendChild(town_image);
+		
+	let ocean_image = document.createElement("img");
+	ocean_image.src = "/static/images/ocean.png";
+	ocean_image.id = "ocean_image";
+	ocean.appendChild(ocean_image);
+	
+	//position menus correctly
+	document.getElementById("menus").style.left = game.players.includes(my_name) ? "370px" : "250px";
 	
 	
 	//cycle the list of players so that my player board is shown first (at the top), but the order is still right
@@ -91,6 +103,21 @@ function init_game_display(players, game){
 	ocean.appendChild(city_pier.div);
 	
 	
+	//add dock slots - first added get preference when placing a ship on the dock
+	//First set is going up the dock w/ space in between. Second set fills in the gaps, third set gets the ones overlapping the worker tiles
+	newDockSlot(ocean_center_x, 143, 17);
+	newDockSlot(ocean_center_x, 97, 15);
+	
+	newDockSlot(ocean_center_x, 166, 18);
+	newDockSlot(ocean_center_x, 120, 16);
+	newDockSlot(ocean_center_x, 74, 14);
+	
+	newDockSlot(ocean_center_x, 51, 13);	
+	newDockSlot(ocean_center_x, 28, 12);
+	newDockSlot(ocean_center_x, 5, 11);
+	
+	
+	
 	//build any buildings already built
 	for(let b=0; b<game.buildings.length; b++){
 		let building = game.buildings[b];
@@ -120,10 +147,6 @@ function init_game_display(players, game){
 	
 	//set the correct player's turn
 	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
-		
-	
-	home_screen.style.display = "none";
-	game_div.style.display = "block";
 }
 
 
@@ -143,16 +166,6 @@ class PlayerBoard {
 		name_display.className = "name_display";
 		this.div.appendChild(name_display);
 		
-		let img = document.createElement("img");
-		img.src = "/static/images/player_board.png";
-		img.className = "player_board_img";
-		this.div.appendChild(img);
-		
-		this.disconnected_div = document.createElement("div"); //div shown if a player disconnects
-		this.disconnected_div.className = "disconnected";
-		this.disconnected_div.textContent = "Disconnected";
-		this.div.appendChild(this.disconnected_div);
-		
 		this.misc_items = document.createElement("div");
 		this.misc_items.className = "misc_items";
 		let color_map = {
@@ -163,6 +176,16 @@ class PlayerBoard {
 		};
 		this.misc_items.style.backgroundColor = color_map[this.color];
 		this.div.appendChild(this.misc_items);
+		
+		let img = document.createElement("img");
+		img.src = "/static/images/player_board.png";
+		img.className = "player_board_img";
+		this.div.appendChild(img);
+		
+		this.disconnected_div = document.createElement("div"); //div shown if a player disconnects
+		this.disconnected_div.className = "disconnected";
+		this.disconnected_div.textContent = "Disconnected";
+		this.div.appendChild(this.disconnected_div);
 		
 		//center locations - w/ respect to top left of player board aka the main image
 		if(name == my_name){
@@ -350,4 +373,35 @@ function newWhaleCounterTable(className, prefix, player_board){
 	table.appendChild(tbody);
 	
 	player_board.div.appendChild(table);
+}
+
+
+
+
+
+
+
+
+function newDockSlot(x, y, z_index){
+	//x and y relative to the ocean div, and indicating the top-MIDDLE of the where the ship should go
+	
+	let slot = document.createElement("div");
+	slot.className = "dock_slot";
+	slot.style.left = x + "px";
+	slot.style.top = y + "px";
+	slot.style.zIndex = z_index;
+	
+	dock_slots.push(slot);
+	ocean.appendChild(slot);
+}
+
+
+function getOpenDockSlot(){
+	for(let i=0; i<dock_slots.length; i++){
+		let slot = dock_slots[i];
+		if(slot.children.length == 0){
+			return slot;
+		}
+	}
+	throw new Error("Couldn't find empty dock slot");
 }

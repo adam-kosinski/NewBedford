@@ -132,7 +132,7 @@ document.addEventListener("click", function(e){
 				openPopup("build_discount_popup");
 			}
 			else if(canPlayerBuild(my_name, building_to_build)){ //will only trigger w/ town hall b/c only one player allowed on the courthouse
-				let yes_build = confirm("Confirm build (normal price)?");
+				let yes_build = confirm("Confirm build?");
 				if(yes_build){
 					socket.emit("build", building_to_build, build_type, getBuildingCost(building_to_build));
 					closePopups();

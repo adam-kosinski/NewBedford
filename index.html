@@ -7,6 +7,8 @@
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body>
+		<div id="background"></div>
+	
 		<div id="home_screen">
 			<h1>Welcome!</h1>
 			<div id="player_display"></div>
@@ -21,16 +23,16 @@
 			</div>
 			<div id="board">
 				<div id="town"></div>
-				<div id="ocean">
-					<img id="ocean_image" src="/static/images/ocean.png"/>
-				</div>
+				<div id="ocean"></div>
 			</div>
 			
 			<div id="animation_div"></div>
 			<img id="first_player_token" src="/static/images/first_player_token.png"/>
-			<div id="build_menu_mallet">
-				<img src="/static/images/mallet.png"/>
-				<p>Build Menu</p>
+			<div id="menus">
+				<div id="build_menu_mallet">
+					<img src="/static/images/mallet.png"/>
+					<p>Build Menu</p>
+				</div>
 			</div>
 			
 			<!--Popups-->

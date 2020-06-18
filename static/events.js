@@ -13,6 +13,8 @@ start_button.addEventListener("click", function(){
 
 document.addEventListener("click", function(e){	
 	
+	console.log(e.pageX, e.pageY);
+	
 	//Buildings
 	
 	if(e.target.classList.contains("building") && e.target.classList.contains("selectable")){		
@@ -64,10 +66,10 @@ document.addEventListener("click", function(e){
 		
 		//town - docks
 		else if(building == "dockyard"){
-			
+			//check if have a ship in player board first
 		}
 		else if(building == "city_pier"){
-			
+			//check if have a prepared ship to launch
 		}
 		
 		
@@ -78,7 +80,7 @@ document.addEventListener("click", function(e){
 			openPopup("build_menu");
 		}
 		else if(building == "dry_dock"){
-			
+			//check if have a ship in player board first
 		}
 		else if(building == "lighthouse"){
 			
@@ -93,7 +95,7 @@ document.addEventListener("click", function(e){
 			
 		}
 		else if(building == "wharf"){
-			
+			//check if have a prepared ship
 		}
 		
 		

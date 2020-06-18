@@ -174,9 +174,125 @@ class BuildingArea {
 				socket.emit("done");
 			});
 		}
-		
 		//no need to emit "done" if not animating - the server only ever builds from the queue w/ animation
+		
+		
+		//figure out if the layout needs resizing based on changes to town bounding box
+		let new_town_box = getTownBoundingBox();
+		let board_x_offset = town_bounding_box.x_min - new_town_box.x_min;
+		let town_y_offset = town_bounding_box.y_min - new_town_box.y_min;
+		let ocean_x_offset = new_town_box.x_max - town_bounding_box.x_max;
+		
+		//we need to change the z-index of animation div temporarily so the town isn't on top of the player boards
+		let z = getComputedStyle(animation_div).zIndex;
+		animation_div.style.zIndex = 1;
+		
+		if(Math.abs(board_x_offset) > 0.5){
+			if(animate){
+				let startpoint = getLocation(board, animation_div);
+				let endpoint = {x: startpoint.x + board_x_offset, y: startpoint.y};
+				changeParent(board, animation_div);
+				moveAnimate(board, game_div, startpoint, endpoint, layout_move_speed, function(){
+					changeParent(board, game_div);
+					town_bounding_box = getTownBoundingBox(); //it changed during the animation
+					updateGameDivSize();
+				});
+			}
+			else {
+				board.style.left = Number(getComputedStyle(board).left.split("px")[0]) + board_x_offset + "px";
+				town_bounding_box = getTownBoundingBox();
+				updateGameDivSize();
+			}
+		}
+		if(Math.abs(town_y_offset) > 0.5){
+			if(animate){
+				let startpoint = getLocation(town, animation_div);
+				let endpoint = {x: startpoint.x, y: startpoint.y + town_y_offset};
+				changeParent(town, animation_div);
+				moveAnimate(town, board, startpoint, endpoint, layout_move_speed, function(){
+					changeParent(town, board);
+					town_bounding_box = getTownBoundingBox(); //it changed during the animation
+					updateGameDivSize();
+				});
+			}
+			else {
+				town.style.top = Number(getComputedStyle(town).top.split("px")[0]) + town_y_offset + "px";
+				town_bounding_box = getTownBoundingBox();
+				updateGameDivSize();
+			}
+		}
+		if(Math.abs(ocean_x_offset) > 0.5){
+			if(animate){
+				let startpoint = getLocation(ocean, animation_div);
+				let endpoint = {x: startpoint.x + ocean_x_offset, y: startpoint.y};
+				changeParent(ocean, animation_div);
+				moveAnimate(ocean, board, startpoint, endpoint, layout_move_speed, function(){
+					changeParent(ocean, board);
+					town_bounding_box = getTownBoundingBox(); //it changed during the animation
+					updateGameDivSize();
+				});
+			}
+			else {
+				ocean.style.left = Number(getComputedStyle(ocean).left.split("px")[0]) + ocean_x_offset + "px";
+				town_bounding_box = getTownBoundingBox();
+				updateGameDivSize();
+			}
+		}
+		
+		//restore animation div's z index
+		animation_div.style.zIndex = z;
 	}
+}
+
+
+
+
+
+
+function getTownBoundingBox(){	
+	//need to iterate through all the buildings and use the min and max coords they cover
+	let x_min = Infinity;
+	let x_max = -Infinity;
+	let y_min = Infinity;
+	let y_max = -Infinity;
+	let building_elements = document.getElementsByClassName("building");
+	
+	for(let i=0; i<building_elements.length; i++){
+		let b = building_elements[i];
+		if(b.object.type != "dockyard" && b.object.type != "city_pier"){ //don't include whaling buildings
+			let box = b.getBoundingClientRect();
+			x_min = Math.min(x_min, box.x);
+			x_max = Math.max(x_max, box.x + box.width);
+			y_min = Math.min(y_min, box.y);
+			y_max = Math.max(y_max, box.y + box.height);
+		}
+	}
+	
+	//correct for scroll
+	x_min += window.scrollX;
+	x_max += window.scrollX;
+	y_min += window.scrollY;
+	y_max += window.scrollY;
+	
+	console.log(x_min, y_min);
+	console.log(x_max, y_max);
+	
+	return {
+		x_min: x_min,
+		x_max: x_max,
+		y_min: y_min,
+		y_max: y_max
+	}
+}
+
+
+
+
+function updateGameDivSize(){
+	//this allows us to control scroll minimums
+	let ocean_box = document.getElementById("ocean_image").getBoundingClientRect();
+	game_div.style.width = ocean_box.x + ocean_box.width + 30 + "px";
+	game_div.style.height = town_bounding_box.y_max + 30 + "px";
 }
 
 
@@ -248,3 +364,4 @@ function getBuildingCost(building, discounts=[]){
 	
 	return cost;
 }
+

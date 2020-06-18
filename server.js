@@ -50,7 +50,7 @@ class Player {
 		this.color = undefined; //defined at game start
 		
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
-		this.ships = [new Ship(), new Ship()];
+		this.ships = [new Ship("small"), new Ship("big")];
 		this.food = 20;
 		this.wood = 20;
 		this.brick = 20;
@@ -63,7 +63,8 @@ class Player {
 }
 
 class Ship {
-	constructor(){
+	constructor(type){ //type is "small" or "big"
+		this.type = type;
 		this.prepared = false; //if prepared and on the dock
 		this.distance = -1; //how far out to sea it is, -1 is not out at sea, 0 is returning
 		this.priority = 1; //1, 2, or 3
@@ -172,6 +173,7 @@ class Game {
 	}
 	nextTurn(){
 		this.current_player++;
+		
 		if(this.current_player >= this.players.length){
 			if(this.worker_cycle == 0){
 				console.log("Starting second worker cycle");
@@ -574,7 +576,7 @@ function initBuildings(){
 			console.log("queue emitting market sell");
 		});
 		queue.push(function(){
-			let value = (data.food>0? data.food+1 : 0) + (data.wood>0? data.wood+2 : 0) + 2*(data.brick>0? data.brick+1 : 0);
+			let value = (data.food>0? data.food+1 : 0) + (data.wood>0? data.wood+1 : 0) + 2*(data.brick>0? data.brick+1 : 0);
 			io.sockets.emit("give", name, {money: value}, "market");
 			players[name].money += value;
 		});

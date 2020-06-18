@@ -209,7 +209,7 @@ document.addEventListener("click", function(e){
 	
 	
 	
-	//general_store	
+	//store	
 	if(e.target.id == "store_sell_button"){
 		console.log("sell",opened_store);
 		let sell_data = {

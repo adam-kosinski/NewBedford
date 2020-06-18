@@ -84,10 +84,10 @@ document.addEventListener("click", function(e){
 			
 		}
 		else if(building == "lumber_mill"){
-			
+			openPopup("lumber_mill_popup");
 		}
 		else if(building == "market"){
-			
+			openPopup("market_popup");
 		}
 		else if(building == "tryworks"){
 			

@@ -107,6 +107,8 @@ class Building {
 			let owner = this.owner;
 			queue.push(function(){
 				io.sockets.emit("give", owner, {money: 1}, name);
+				players[name].money -= 1;
+				players[owner].money += 1;
 				console.log("queue emitting pay building owner");
 			});
 		}
@@ -526,18 +528,18 @@ function initBuildings(){
 
 	new Building("courthouse", false, function(name, data){
 		let cost = data.cost;
-			queue.push(function(){
-				io.sockets.emit("give","courthouse",cost,name);
-				players[name].food -= cost.food;
-				players[name].wood -= cost.wood;
-				players[name].brick -= cost.brick;
-				players[name].money -= cost.money;
-				console.log("emitted give to town hall");
-			});
-			queue.push(function(){
-				io.sockets.emit("build", name, data.building_to_build);
-				console.log("emitted build");
-			});
+		queue.push(function(){
+			io.sockets.emit("give","courthouse",cost,name);
+			players[name].food -= cost.food;
+			players[name].wood -= cost.wood;
+			players[name].brick -= cost.brick;
+			players[name].money -= cost.money;
+			console.log("emitted give to town hall");
+		});
+		queue.push(function(){
+			io.sockets.emit("build", name, data.building_to_build);
+			console.log("emitted build");
+		});
 	});
 
 	new Building("dry_dock", false, function(name){});
@@ -546,11 +548,37 @@ function initBuildings(){
 
 	new Building("lighthouse", false, function(name){});
 
-	new Building("lumber_mill", false, function(name){});
+	new Building("lumber_mill", false, function(name, data){
+		queue.push(function(){
+			io.sockets.emit("give", "lumber_mill", data, name);
+			players[name].food -= data.food;
+			players[name].wood -= data.wood;
+			players[name].brick -= data.brick;
+			console.log("queue emitting lumber_mill sell");
+		});
+		queue.push(function(){
+			let value = 2*data.wood;
+			io.sockets.emit("give", name, {money: value}, "lumber_mill");
+			players[name].money += value;
+		});
+	});
 
 	new Building("mansion", false, function(name){});
 
-	new Building("market", false, function(name){});
+	new Building("market", false, function(name, data){
+		queue.push(function(){
+			io.sockets.emit("give", "market", data, name);
+			players[name].food -= data.food;
+			players[name].wood -= data.wood;
+			players[name].brick -= data.brick;
+			console.log("queue emitting market sell");
+		});
+		queue.push(function(){
+			let value = (data.food>0? data.food+1 : 0) + (data.wood>0? data.wood+2 : 0) + 2*(data.brick>0? data.brick+1 : 0);
+			io.sockets.emit("give", name, {money: value}, "market");
+			players[name].money += value;
+		});
+	});
 
 	new Building("municipal_office", false, function(name){});
 

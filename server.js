@@ -51,8 +51,8 @@ class Player {
 		this.color = undefined; //defined at game start
 		
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
-		this.small_ship = new Ship("small");
-		this.big_ship = new Ship("big");
+		this.small_ship = new Ship(name, "small");
+		this.big_ship = new Ship(name, "big");
 		this.food = 20;
 		this.wood = 20;
 		this.brick = 20;
@@ -65,7 +65,8 @@ class Player {
 }
 
 class Ship {
-	constructor(type){ //type is "small" or "big"
+	constructor(owner, type){ //owner: a player name, type is "small" or "big"
+		this.owner = owner;
 		this.type = type;
 		this.prepared = false; //if prepared and on the dock
 		this.distance = undefined; //how far out to sea it is, -1 is returning, undefined is not at sea
@@ -158,6 +159,7 @@ class Game {
 		this.round = 1;
 		
 		this.ocean = new Ocean(this.players.length);
+		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first
 		this.whaling_result = [];
 		
 		this.buildings = []; //contains town and player Building objects.
@@ -200,13 +202,51 @@ class Game {
 			console.log("queue emitting set_turn for "+cur_player_name);
 		});
 	}
-	movementPhase(show_banner=true){
+	movementPhase(show_banner=true){ //optional arg so that this.returnAllShips() can use it w/o activating the banner
 		//tell sockets to animate the banner indicating the movement phase
-		//set timeout to wait for that to finish
-		//do ships at distance 1 one at a time based on priority
 			//to move ship - change vars here, tell sockets to animate certain ships
 			//return if necessary - more complications here
 		//do ships at distance 2+ all at once
+		
+		if(show_banner){
+			queue.push(function(){
+				io.sockets.emit("banner","Movement Phase");
+				console.log("queue emitting movement phase banner");
+			});
+		}
+		
+		//move all ships one unit towards land, simultaneously. Check if the ship needs to be returned in the process.
+		queue.push(function(){
+			for(let i=0; i<game.players.length; i++){
+				let name = game.players[i];
+				let small = players[name].small_ship;
+				let big = players[name].big_ship;
+				
+				if(small.distance != undefined){
+					small.distance -= 1;
+					if(small.distance <= -1){
+						game.return_queue.push(small);
+					}
+					io.sockets.emit("move_ship",name,"small","to_shore");
+				}
+				if(big.distance != undefined){
+					big.distance -= 1;
+					if(big.distance <= -1){
+						game.return_queue.push(big);
+					}
+					io.sockets.emit("move_ship",name,"big","to_shore");
+				}
+			}
+		});
+		
+		//start returning ships
+		queue.push(function(){
+			setTimeout(game.returnNextShip, 500); //setting a timeout so all the excess "done" events we receive from the ship movement don't spill over to later queue items
+		});
+	}
+	returnNextShip(){
+		//called by this.movementPhase(), and called whenever a ship finishes returning, until no ships left to return.
+		console.log("return next ship");
 	}
 	whalingPhase(){
 		

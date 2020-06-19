@@ -96,6 +96,10 @@ function give(to, data, from){
 		}
 	}
 	
+	if(give_array.length == 0){ //this can happen when launching a ship for 0 food using the bonus
+		socket.emit("done");
+	}
+	
 	//give them with pauses in between
 	let give_next = function(){
 		let this_resource = give_array.splice(0,1)[0];

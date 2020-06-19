@@ -111,8 +111,15 @@ socket.on("set_turn", function(name){
 	setTurn(name); //see update.js
 });
 
-
-
 socket.on("banner", function(message){
-	
+	banner.textContent = message;
+	banner.style.display = "block";
+	fadeAnimate(banner, 0, 1, 1500, function(){
+		setTimeout(function(){
+			fadeAnimate(banner, 1, 0, 1000, function(){
+				banner.style.display = "none";
+				socket.emit("done");
+			});
+		}, 3500);
+	});
 });

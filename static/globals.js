@@ -29,6 +29,7 @@ let first_discount = undefined;
 let second_discount = undefined;
 let build_button = document.getElementById("build_button");
 
+let launch_type = "city_pier"; //or "dry_dock" or "wharf"
 
 //bulk DOM info (references, locations, data)
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)

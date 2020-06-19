@@ -235,3 +235,53 @@ img#building_to_build_display {
 	left: 225px;
 	font-size: 24px;
 }
+
+
+/* launch popup ---------------------------*/
+
+#launch_popup {
+	width: 170px;
+	height: 420px;
+	font-size: 20px;
+}
+
+#launch_title {
+	width: 170px;
+}
+
+#launch_popup img {
+	height: 25px;
+}
+
+#launch_popup table {
+	top: 80px;
+	background-color: wheat;
+	border-collapse: collapse;
+}
+
+#launch_popup table * {
+	position: static;
+}
+
+#launch_popup tr:first-child {
+	background-color: goldenrod;
+}
+
+#launch_popup .distance_option:not(.disabled):hover {
+	cursor: pointer;
+	background-color: floralwhite;
+}
+
+#launch_popup tr.disabled {
+	background-color: darkgray;
+}
+
+#launch_popup td {
+	padding: 10px;
+	border: 2px solid burlywood;
+}
+
+#launch_popup td span {
+	display: inline-block;
+	transform: translate(0, -5px);
+}

@@ -9,7 +9,7 @@ function closePopups(){
 	}
 }
 
-function openPopup(id){ //id should be name of building + "_popup", or "build_menu", or "build_discount_popup"
+function openPopup(id){ //id of popup's HTML element, or for stores: name of store + "_popup"
 	closePopups(); //only have one open at a time
 	
 	//popup specific stuff
@@ -64,6 +64,27 @@ function openPopup(id){ //id should be name of building + "_popup", or "build_me
 		loadStore("market");
 		id = "store_popup";
 	}
+	if(id == "launch_popup"){
+		//set correct costs
+		let n_food = Number(player_boards[my_name].food_counter.textContent);
+		let costs = [1,2,3,4,5,6]; //food cost
+		if(launch_type == "city_pier" && buildings.city_pier.getNumberOfWorkers() == 0){
+			costs = costs.map(x => x-1);
+		}
+		if(launch_type == "wharf"){
+			costs = costs.map(x => Math.ceil(x/2));
+		}
+		for(let i=0; i<costs.length; i++){
+			document.getElementById("cost_"+(i+1)).textContent = costs[i];
+			let tr = document.getElementById("distance_"+(i+1));
+			if(costs[i] > n_food){
+				tr.classList.add("disabled");
+			}
+			else {
+				tr.classList.remove("disabled");
+			}
+		}
+	}
 	
 	//open
 	popup_background.style.display = "block";
@@ -102,6 +123,18 @@ function loadStore(type){
 	if(type == "market"){
 		document.getElementById("market_bonus").style.display = "block";
 	}
+}
+
+
+
+function getNumberOfShipsAtDistance(dist){
+	let n = 0;
+	updateShipPriorityAndDistance(); //just in case
+	for(let name in player_boards){
+		if(player_boards[name].small_ship.distance == dist){n++;}
+		if(player_boards[name].big_ship.distance == dist){n++;}
+	}
+	return n;
 }
 
 
@@ -261,6 +294,27 @@ document.addEventListener("click", function(e){
 		case "lumber_mill": total.textContent = 2*n_wood; break;
 		case "market": total.textContent = (n_food>0 ? n_food+1 : 0) + (n_wood>0 ? n_wood+1 : 0) + 2*(n_brick>0 ? n_brick+1 : 0); break;
 	}
+	
+	
+	
+	//launch popup
+	if(e.target.tagName == "TR" || e.target.parentElement.tagName == "TR" || e.target.parentElement.parentElement.tagName == "TR"){
+		let tr = e.target.tagName == "TR" ? e.target : 
+			e.target.parentElement.tagName == "TR" ? e.target.parentElement : e.target.parentElement.parentElement;
+		
+		if(tr.classList.contains("distance_option") && !tr.classList.contains("disabled")){
+			let distance = Number(tr.id.match(/[1-6]/)[0]);
+			if(getNumberOfShipsAtDistance(distance) >= 3){ //should never be greater than 3, but who knows? Function in the top section of this file
+				alert("Distance " + distance + " is full of ships already, you can't launch there");
+				return;
+			}
+			
+			let cost = Number(document.getElementById("cost_"+distance).textContent);
+			socket.emit("place_worker", launch_type, {distance: distance, cost:cost});
+			closePopups();
+		}
+	}
+	
 });
 
 

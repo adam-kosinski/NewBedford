@@ -94,6 +94,10 @@ socket.on("move_worker", function(name, where){
 	moveWorker(name, where); //see update.js
 });
 
+socket.on("move_ship", function(name, which_ship, where, priority){
+	moveShip(name, which_ship, where, priority); //see update.js
+});
+
 socket.on("give", function(name, data, from){
 	give(name, data, from); //see update.js
 });

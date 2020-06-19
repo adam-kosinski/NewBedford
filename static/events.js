@@ -67,9 +67,33 @@ document.addEventListener("click", function(e){
 		//town - docks
 		else if(building == "dockyard"){
 			//check if have a ship in player board first
+			let available_ships = player_boards[my_name].div.getElementsByClassName("ship");
+			if(available_ships.length == 0){
+				alert("You don't have any ships available to prepare");
+				return;
+			}
+			//check if have enough wood
+			let n_workers = buildings.dockyard.getNumberOfWorkers();
+			let n_wood = Number(player_boards[my_name].wood_counter.textContent);
+			if(n_workers == 0 && n_wood < 1 || n_workers > 0 && n_wood < 2){
+				alert("You don't have enough wood to prepare a ship");
+				return;
+			}
+			
+			let which_ship = available_ships[0].className.match(/small|big/)[0];
+			socket.emit("place_worker", "dockyard", {which_ship: which_ship});
 		}
 		else if(building == "city_pier"){
 			//check if have a prepared ship to launch
+			if( ! (
+				player_boards[my_name].small_ship.parentElement.classList.contains("dock_slot") ||
+				player_boards[my_name].big_ship.parentElement.classList.contains("dock_slot") )
+			){
+				alert("You don't have any prepared ships to launch");
+				return;
+			}
+			launch_type = "city_pier";
+			openPopup("launch_popup");
 		}
 		
 		
@@ -81,6 +105,18 @@ document.addEventListener("click", function(e){
 		}
 		else if(building == "dry_dock"){
 			//check if have a ship in player board first
+			let available_ships = player_boards[my_name].div.getElementsByClassName("ship");
+			if(available_ships.length == 0){
+				alert("You don't have any ships available to prepare");
+				return;
+			}
+			//check if have enough wood
+			if(Number(player_boards[my_name].wood_counter.textContent) < 2){
+				alert("You don't have enough wood (2) to prepare a ship");
+				return;
+			}
+			launch_type = "dry_dock";
+			openPopup("launch_popup");
 		}
 		else if(building == "lighthouse"){
 			
@@ -96,6 +132,15 @@ document.addEventListener("click", function(e){
 		}
 		else if(building == "wharf"){
 			//check if have a prepared ship
+			if( ! (
+				player_boards[my_name].small_ship.parentElement.classList.contains("dock_slot") ||
+				player_boards[my_name].big_ship.parentElement.classList.contains("dock_slot") )
+			){
+				alert("You don't have any prepared ships to launch");
+				return;
+			}
+			launch_type = "wharf";
+			openPopup("launch_popup");
 		}
 		
 		

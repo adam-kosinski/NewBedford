@@ -379,6 +379,8 @@ function moveShip(name, which_ship, where, priority=1, emit_done=true){
 			if(emit_done){socket.emit("done");}
 		});
 	}
+	
+	updateShipPriorityAndDistance();
 }
 
 
@@ -407,6 +409,22 @@ function updateSelectableBuildings(){
 	}
 }
 
+
+
+function updateShipPriorityAndDistance(){
+	//the players' ships have the custom properties 'distance' and 'priority', used for determining if a launch is valid before we tell the server
+	//this function updates those by asking the server
+	
+	socket.emit("get_state", function(players, game){
+		for(let i=0; i<game.players.length; i++){
+			let name = game.players[i];
+			player_boards[name].small_ship.distance = players[name].small_ship.distance;
+			player_boards[name].small_ship.priority = players[name].small_ship.priority;
+			player_boards[name].big_ship.distance = players[name].big_ship.distance;
+			player_boards[name].big_ship.priority = players[name].big_ship.priority;
+		}
+	});
+}
 
 
 

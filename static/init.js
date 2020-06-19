@@ -145,6 +145,51 @@ function init_game_display(players, game){
 		}
 	}
 	
+	//put ships in correct places
+	updateShipPriorityAndDistance(); //see update.js
+	for(let name in player_boards){
+		let small_ship_dist = players[name].small_ship.distance;
+		let big_ship_dist = players[name].big_ship.distance;
+
+		//do checks to see if we need to move the ships from storage
+		//small ship
+		if(small_ship_dist != undefined){
+			let ship = player_boards[name].small_ship;
+			let priority = players[name].small_ship.priority;
+			ship.style.left = whaling_track_origin.x + (priority-1)*whaling_priority_offset - 0.5*ship.width + "px";
+			ship.style.top = whaling_track_origin.y + (small_ship_dist+1)*whaling_row_offset - 0.6*ship.height + "px";
+			ship.style.zIndex = 4 - priority;
+			ocean.appendChild(ship);
+		}
+		else if(players[name].small_ship.prepared){
+			let ship = player_boards[name].small_ship;
+			let dock_slot = getOpenDockSlot();
+			ship.style.left = -0.5*ship.width + "px";
+			ship.style.top = "0px";
+			
+			dock_slot.appendChild(ship);
+		}
+		
+		//big ship
+		if(big_ship_dist != undefined){
+			let ship = player_boards[name].big_ship;
+			let priority = players[name].big_ship.priority;
+			ship.style.left = whaling_track_origin.x + (priority-1)*whaling_priority_offset - 0.5*ship.width + "px";
+			ship.style.top = whaling_track_origin.y + (big_ship_dist+1)*whaling_row_offset - 0.6*ship.height + "px";
+			ship.style.zIndex = 4 - priority;
+			ocean.appendChild(ship);
+		}
+		else if(players[name].big_ship.prepared){
+			let ship = player_boards[name].big_ship;
+			let dock_slot = getOpenDockSlot();
+			
+			ship.style.left = -0.5*ship.width + "px";
+			ship.style.top = "0px";
+			
+			dock_slot.appendChild(ship);
+		}
+	}
+	
 	//set the correct player's turn
 	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
 }
@@ -250,19 +295,18 @@ class PlayerBoard {
 		
 		this.small_ship = document.createElement("img");
 		this.small_ship.src = "/static/images/" + this.color + "_small_ship.png";
-		this.small_ship.className = "small_ship";
+		this.small_ship.className = "small_ship ship";
 		this.small_ship.style.left = this.location.small_ship_storage.x + "px";
 		this.small_ship.style.top = this.location.small_ship_storage.y + "px";
 		this.div.appendChild(this.small_ship);
 		
 		this.big_ship = document.createElement("img");
 		this.big_ship.src = "/static/images/" + this.color + "_big_ship.png";
-		this.big_ship.className = "big_ship";
+		this.big_ship.className = "big_ship ship";
 		this.big_ship.style.left = this.location.big_ship_storage.x + "px";
 		this.big_ship.style.top = this.location.big_ship_storage.y + "px";
 		this.div.appendChild(this.big_ship);
-		
-		
+				
 		//first player token
 		this.first_player_token_spot = document.createElement("div");
 		this.first_player_token_spot.className = "first_player_token_spot";

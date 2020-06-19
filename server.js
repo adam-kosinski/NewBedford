@@ -2,12 +2,13 @@
 Notes
 
 Change dialog windows to my own popups - I think leaving one open too long can mess with the socket connection
-
-Discount popup shouldn't show discount items that wouldn't help (if cost is 0 of that item)
-
 Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
+
+Remember when returning ships to remove their z-index property so the dock slots will work properly. ship.style.zIndex = ""; (default)
+
+Fix it so that clicking on any of a buildings children will activate the building
 
 FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
 */
@@ -50,7 +51,8 @@ class Player {
 		this.color = undefined; //defined at game start
 		
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
-		this.ships = [new Ship("small"), new Ship("big")];
+		this.small_ship = new Ship("small");
+		this.big_ship = new Ship("big");
 		this.food = 20;
 		this.wood = 20;
 		this.brick = 20;
@@ -66,7 +68,7 @@ class Ship {
 	constructor(type){ //type is "small" or "big"
 		this.type = type;
 		this.prepared = false; //if prepared and on the dock
-		this.distance = -1; //how far out to sea it is, -1 is not out at sea, 0 is returning
+		this.distance = undefined; //how far out to sea it is, -1 is returning, undefined is not at sea
 		this.priority = 1; //1, 2, or 3
 		this.right_whales = 0;
 		this.bowhead_whales = 0;
@@ -75,7 +77,7 @@ class Ship {
 }
 
 class Building {
-	constructor(type, in_town, first_function, normal_function=function(){}){ //in_town is a bool, first and normal are functions to run when workers are placed here
+	constructor(type, in_town, first_function, normal_function){ //in_town is a bool, first and normal are functions to run when workers are placed here. normal is optional, only if different from first
 		this.type = type;
 		this.in_town = in_town;
 		this.first_function = first_function;
@@ -116,7 +118,7 @@ class Building {
 		
 		
 		//do the building action
-		if(this.workers == 1){
+		if(this.workers == 1 || this.normal_function === undefined){
 			this.first_function(name, data);
 		}
 		else {
@@ -388,38 +390,21 @@ function initBuildings(){
 	buildings = {}; //clear any previous state
 
 	//central town
-	new Building("town_hall", true,
-		function(name, data){
-			let cost = data.cost;
-			queue.push(function(){
-				io.sockets.emit("give","town_hall",cost,name);
-				players[name].food -= cost.food;
-				players[name].wood -= cost.wood;
-				players[name].brick -= cost.brick;
-				players[name].money -= cost.money;
-				console.log("emitted give to town hall");
-			});
-			queue.push(function(){
-				io.sockets.emit("build", name, data.building_to_build);
-				console.log("emitted build");
-			});
-		},
-		function(name, data){ //happens to be the same function for first/normal here, but easiest to just copy paste
-			let cost = data.cost;
-			queue.push(function(){
-				io.sockets.emit("give","town_hall",cost,name);
-				players[name].food -= cost.food;
-				players[name].wood -= cost.wood;
-				players[name].brick -= cost.brick;
-				players[name].money -= cost.money;
-				console.log("emitted give to town hall");
-			});
-			queue.push(function(){
-				io.sockets.emit("build", name, data.building_to_build);
-				console.log("emitted build");
-			});
-		}
-	);
+	new Building("town_hall", true, function(name, data){
+		let cost = data.cost;
+		queue.push(function(){
+			io.sockets.emit("give","town_hall",cost,name);
+			players[name].food -= cost.food;
+			players[name].wood -= cost.wood;
+			players[name].brick -= cost.brick;
+			players[name].money -= cost.money;
+			console.log("emitted give to town hall");
+		});
+		queue.push(function(){
+			io.sockets.emit("build", name, data.building_to_build);
+			console.log("emitted build");
+		});
+	});
 
 	new Building("general_store", true,
 		function(name, data){ //data here is {resource: amount_sold, etc.}
@@ -510,9 +495,41 @@ function initBuildings(){
 
 	//town - docks
 
-	new Building("dockyard", true, function(name){}, function(name){});
+	new Building("dockyard", true,
+		function(name, data){
+			queue.push(function(){
+				io.sockets.emit("give","dockyard",{wood: 1}, name);
+				players[name].wood -= 1;
+				console.log("emitting dockyard preparation");
+			});
+			queue.push(function(){
+				players[name][data.which_ship+"_ship"].prepared = true;
+				io.sockets.emit("move_ship", name, data.which_ship, "dock");
+			});
+		},
+		function(name, data){
+			queue.push(function(){
+				io.sockets.emit("give","dockyard",{wood: 2}, name);
+				players[name].wood -= 2;
+				console.log("emitting dockyard preparation");
+			});
+			queue.push(function(){
+				players[name][data.which_ship+"_ship"].prepared = true;
+				io.sockets.emit("move_ship", name, data.which_ship, "dock");
+			});
+		}
+	);
 
-	new Building("city_pier", true, function(name){}, function(name){});
+	new Building("city_pier", true, function(name, data){
+		queue.push(function(){
+			io.sockets.emit("give","city_pier",{food: data.cost},name);
+			players[name].food -= data.cost;
+			console.log("queue emitting city_pier launch");
+		});
+		queue.push(function(){
+			launch_ship(name, data);
+		});
+	});
 
 
 	//player buildings
@@ -544,7 +561,22 @@ function initBuildings(){
 		});
 	});
 
-	new Building("dry_dock", false, function(name){});
+	new Building("dry_dock", false, function(name, data){
+		queue.push(function(){
+			io.sockets.emit("give","dry_dock",{wood: 2, food: data.cost},name);
+			players[name].wood -= 2;
+			players[name].food -= data.cost;
+			console.log("queue emitting dry_dock launch");
+		});
+		queue.push(function(){
+			let which_ship = players[name].small_ship.distance == undefined ? "small" : "big";
+			players[name][which_ship+"_ship"].prepared = true;
+			io.sockets.emit("move_ship", name, which_ship, "dock");
+		});
+		queue.push(function(){
+			launch_ship(name, data);
+		});
+	});
 
 	new Building("inn", false, function(name){});
 
@@ -594,5 +626,43 @@ function initBuildings(){
 
 	new Building("tryworks", false, function(name){});
 
-	new Building("wharf", false, function(name){});
+	new Building("wharf", false, function(name, data){
+		queue.push(function(){
+			io.sockets.emit("give","wharf",{food: data.cost},name);
+			players[name].food -= data.cost;
+			console.log("queue emitting wharf launch");
+		});
+		queue.push(function(){
+			launch_ship(name, data);
+		});
+	});
+}
+
+
+
+//function to launch a ship, used by the city_pier, dry_dock, and wharf building actions
+function launch_ship(name, data){
+	//Launch ship. Need to determine which ship and priority first
+	let which_ship = players[name].small_ship.prepared ? "small" : "big";
+	players[name][which_ship+"_ship"].prepared = false; //not prepared anymore
+	
+	//iterate through all ships to figure out who's already at that distance
+	let max_existing_priority = 0;
+	for(let player_name in players){
+		let small = players[player_name].small_ship;
+		let big = players[player_name].small_ship;
+		if(small.distance == data.distance){
+			max_existing_priority = Math.max(small.priority, max_existing_priority);
+		}
+		if(big.distance == data.distance){
+			max_existing_priority = Math.max(big.priority, max_existing_priority);
+		}
+	}
+	
+	let priority = max_existing_priority + 1;
+	
+	players[name][which_ship+"_ship"].priority = priority;
+	players[name][which_ship+"_ship"].distance = data.distance;
+	
+	io.sockets.emit("move_ship", name, which_ship, data.distance, priority);
 }

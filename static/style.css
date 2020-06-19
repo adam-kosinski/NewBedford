@@ -135,11 +135,13 @@ p {
 }
 
 .small_ship {
-	height: 25px;
+	height: 25px; /*need both of them so init.js knows how much to offset by*/
+	width: 30px;
 }
 
 .big_ship {
 	height: 35px;
+	width: 46px;
 }
 
 .animated_resource {

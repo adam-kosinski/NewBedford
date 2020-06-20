@@ -11,6 +11,7 @@ let player_board_container = document.getElementById("player_board_container");
 let board = document.getElementById("board");
 let town = document.getElementById("town");
 let ocean = document.getElementById("ocean");
+let ocean_bag = document.getElementById("ocean_bag");
 
 let first_player_token = document.getElementById("first_player_token");
 
@@ -58,18 +59,22 @@ let town_bounding_box = { //initialize explicitly w/o the function b/c when load
 
 
 //animation config
-let give_animation_speed = 0.3; //pixels/ms
+let give_animation_speed = 0.4; //pixels/ms
 let time_between_gives = 150; //ms
 
-let worker_animation_speed = 0.3; //pixels/ms
+let worker_animation_speed = 0.4; //pixels/ms
 
 let building_fade_in_time = 2000; //ms
 let layout_move_speed = 50 / building_fade_in_time; //pixels/ms
 
-let ship_fast_animation_speed = 0.3; //pixels/ms - for things like docking or returning to storage
-let ship_medium_animation_speed = 0.1; //pixels/ms - for launching
-let ship_slow_animation_speed = 0.05; //pixels/ms - for small movements within the sea
+let ship_fast_animation_speed = 0.4; //pixels/ms - for things like docking or returning to storage
+let ship_medium_animation_speed = 0.2; //pixels/ms - for launching
+let ship_slow_animation_speed = 0.1; //pixels/ms - for small movements within the sea
 
+let ocean_bag_speed = 0.4; //pixels/ms
+let time_between_whales_back_in = 200; //ms, for when unclaimed whales go back in the bag
+let whale_draw_speed = 0.1; //coming out the bag
+let whale_fast_speed = 0.3; //moving to and from storage on the right of the ocean
 
 //misc config
 let whaling_track_origin = {x: 169, y: 120}; //offset from top-left of ocean to the center of the left-most return spot
@@ -77,6 +82,8 @@ let ocean_center_x = 128; //offset from left of ocean to the center of the verti
 let whaling_priority_offset = 30; //px offset between priorities on whaling track
 let whaling_row_offset = 48; //px offset between rows on the whaling track
 
+let whale_storage_origin = {x: 255, y: 0}; //offset from top-left of ocean to top-left corner of first whale storage spot on right of ocean
+let whale_storage_offset_y = 53;
 
 //config copied from style.css
 let building_width = 100; //px

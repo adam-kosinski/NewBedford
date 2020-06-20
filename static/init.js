@@ -190,6 +190,8 @@ function init_game_display(players, game){
 		}
 	}
 	
+	updateGameDivSize();
+	
 	//set the correct player's turn
 	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
 }

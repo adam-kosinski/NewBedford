@@ -274,9 +274,6 @@ function getTownBoundingBox(){
 	y_min += window.scrollY;
 	y_max += window.scrollY;
 	
-	console.log(x_min, y_min);
-	console.log(x_max, y_max);
-	
 	return {
 		x_min: x_min,
 		x_max: x_max,
@@ -290,8 +287,8 @@ function getTownBoundingBox(){
 
 function updateGameDivSize(){
 	//this allows us to control scroll minimums
-	let ocean_box = document.getElementById("ocean_image").getBoundingClientRect();
-	game_div.style.width = ocean_box.x + ocean_box.width + 30 + "px";
+	let ocean_box = document.getElementById("ocean").getBoundingClientRect();
+	game_div.style.width = ocean_box.x + ocean_box.width + 10 + "px";
 	game_div.style.height = town_bounding_box.y_max + 30 + "px";
 }
 

@@ -5,6 +5,7 @@ Change dialog windows to my own popups - I think leaving one open too long can m
 Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
+For 2 player game, don't include 3-4 player buildings
 
 Remember when returning ships to remove their z-index property so the dock slots will work properly. ship.style.zIndex = ""; (default)
 
@@ -131,23 +132,85 @@ class Building {
 }
 
 class Ocean { //TODO: fix counts
-	//0=water, 1=right, 2=bowhead, 3=sperm
 	constructor(n_players){
-		if(n_players == 2){
-			this.bag = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3];
-		}
-		else if(n_players == 3){
-			this.bag = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3];
-		}
-		else if(n_players == 4){
-			this.bag = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3];
-		}
-		else {
+		if(n_players < 2 || n_players > 4){
 			console.log("Invalid number of players ("+n_players+") for initializing the ocean");
 		}
-	}
-	draw_tokens(n_tokens){
 		
+		let n_empty = 4 * n_players;
+		let n_right = 9 * n_players;
+		let n_bowhead = 5 * n_players;
+		let n_sperm = 1 * n_players;
+		
+		this.bag = []; //contains "empty_sea","right_whale","bowhead_whale","sperm_whale" the correct number of times
+		
+		for(let i=0; i<n_empty; i++){
+			this.bag.push("empty_sea");
+		}
+		for(i=0; i<n_right; i++){
+			this.bag.push("right_whale");
+		}
+		for(i=0; i<n_bowhead; i++){
+			this.bag.push("bowhead_whale");
+		}
+		for(i=0; i<n_sperm; i++){
+			this.bag.push("sperm_whale");
+		}
+		
+		this.whaling_result = []; //stuff is taken out of this.bag and placed in here when we go whaling - see this.drawWhales()
+	}
+	getShips(){
+		//returns an array of ships on the ocean in whale-choosing order (first by distance, then by priority)
+		let out = [];
+		for(let i=0; i<game.players.length; i++){
+			let name = game.players[i];
+			let small = players[name].small_ship;
+			let big = players[name].big_ship;
+			if(small.distance != undefined){
+				out.push(small);
+			}
+			if(big.distance != undefined){
+				out.push(big);
+			}
+		}
+		out.sort(function(a,b){
+			if(a.distance > b.distance){return -1;}
+			if(a.distance < b.distance){return 1;}
+			
+			//so must be equal distance now
+			if(a.priority < b.priority){return -1;} //lower priority number means higher priority
+			if(a.priority > b.priority){return 1;}
+			
+			//if still didn't pass, something went very wrong
+			console.log("TWO SHIPS HAVE THE SAME DISTANCE AND PRIORITY");
+			return 0;
+		});
+		return out;
+	}
+	drawWhales(n_whales){	
+		this.whaling_result = []; //clear it from last time
+		
+		queue.push(function(){
+			io.sockets.emit("show_ocean_bag");
+			console.log("queue emitting show_ocean_bag");
+		});
+		queue.push(function(){
+			io.sockets.emit("clear_previous_whales");
+			console.log("queue emitting clear_previous_whales");
+		});
+		for(let i=0; i<n_whales; i++){
+			let whale_idx = Math.floor(Math.random()*this.bag.length);
+			let whale = this.bag.splice(whale_idx, 1)[0]; //take it out of the bag
+			this.whaling_result.push(whale);
+			queue.push(function(){
+				io.sockets.emit("draw_whale", whale, i);
+				console.log("queue emitting draw whale");
+			});
+		}
+		queue.push(function(){
+			io.sockets.emit("hide_ocean_bag");
+			console.log("queue emitting hide_ocean_bag");
+		});
 	}
 }
 
@@ -160,7 +223,6 @@ class Game {
 		
 		this.ocean = new Ocean(this.players.length);
 		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first
-		this.whaling_result = [];
 		
 		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
@@ -240,16 +302,44 @@ class Game {
 		});
 		
 		//start returning ships
-		queue.push(function(){
+		let f = function(){
 			setTimeout(game.returnNextShip, 500); //setting a timeout so all the excess "done" events we receive from the ship movement don't spill over to later queue items
-		});
+		}
+		f.done_not_required = true; //clients not involved in this function
+		queue.push(f);
 	}
 	returnNextShip(){
 		//called by this.movementPhase(), and called whenever a ship finishes returning, until no ships left to return.
-		console.log("return next ship");
+		console.log("return next ship, return queue:",game.return_queue);
+		//NOTE: for whatever reason, this.return_queue is undefined. Use game.return_queue instead
+		//maybe this might be a required thing for any game references from here???
+		
+		if(game.return_queue.length == 0){
+			console.log("No more ships to return in the queue");
+			if(game.round < 12){
+				game.whalingPhase();
+			}
+			else {
+				//TODO: call game.movementPhase w/o banner if there are still ships out
+			}
+			return;
+		}
+		
+		//TODO do the actual returning stuff
 	}
 	whalingPhase(){
+		queue.push(function(){
+			io.sockets.emit("banner","Whaling Phase");
+			console.log("queue emitting whaling phase banner");
+		});
 		
+		console.log(this.ocean);
+		console.log(this.ocean.getShips());
+		
+		let ocean_ships = this.ocean.getShips();
+		if(ocean_ships.length > 0){
+			this.ocean.drawWhales(ocean_ships.length + 1);
+		}
 	}
 	nextRound(){
 		//remember to clear workers from buildings
@@ -396,7 +486,7 @@ function clearGame(){
 //have a queue of things to tell the clients what to do. Only do the next thing in the queue when all the clients
 //have completed the previous thing.
 
-let queue = []; //filled with action functions - just functions to run
+let queue = []; //filled with action functions - just functions to run. If have the property done_not_required (set to true), won't wait for clients to respond before moving onto next one
 //items with lower indices are processed first, so to add an action object to the queue, do queue.push(object)
 
 let busy_clients = []; //filled with connected player names, when client finishes a task, name is removed. If empty, we can do the next task
@@ -405,15 +495,18 @@ function process_queue(){
 		
 	if(queue.length > 0 && busy_clients.length == 0){
 		
-		//fill up busy_clients
-		for(let name in players){
-			if(players[name].connected){
-				busy_clients.push(name);
+		let action = queue.splice(0,1)[0];
+		
+		//fill up busy_clients if we require a done event returned
+		if(!action.done_not_required){
+			for(let name in players){
+				if(players[name].connected){
+					busy_clients.push(name);
+				}
 			}
 		}
 		
 		//emit
-		let action = queue.splice(0,1)[0];
 		action();
 	}
 	

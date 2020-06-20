@@ -3,10 +3,7 @@
 
 #game_div
 	#player_scroll_wrapper - 10
-		.animated_resource - 15
 		.player_board .disconnected - 10
-
-	.animated_resource - 15
 
 	#menus - 5
 
@@ -23,6 +20,11 @@
 		ships on whaling track - 1 through 3, depending on priority
 	
 	#animation_div - 14
+		.animated_resource - 15
+	
+	#ocean_bag - 4
+		#ocean_bag_image - 5
+		whales drawn - 1
 	
 	#popup_background - 20
 	.popup - 21
@@ -131,7 +133,6 @@ p {
 	height: 40px;
 	width: 40px;
 	background-color: lavender;
-	color: rgba(0,0,0,0);
 	cursor: default;
 	border-radius: 10px;
 	padding: 5px;
@@ -145,8 +146,8 @@ p {
 	height: 40px;
 }
 #build_menu_mallet p {
-	top: 50px;
-	padding-top: 10px;
+	left: 50px;
+	padding-left: 10px;
 }
 
 .worker {
@@ -168,6 +169,14 @@ p {
 	width: 30px;
 	transform: translate(-50%, -50%); /*to center it*/
 	z-index: 15;
+}
+
+.whale {
+	height: 50px;
+}
+
+.player_whale { /*whales moving between the ships and the player's returned whales*/
+	height: 30px;
 }
 
 .selectable:hover {
@@ -351,7 +360,7 @@ p {
 #board {
 	position: absolute;
 	left: 370px; /*to clear the player boards + any scrollbar that might appear*/
-	top: 75px; /*to clear the menus*/
+	top: 85px; /*to clear the menus*/
 }
 
 #town {
@@ -374,6 +383,7 @@ p {
 
 #ocean {
 	left: 450px;
+	width: 300px;
 	z-index: 1;
 }
 #ocean_image {
@@ -391,3 +401,29 @@ p {
 .building:hover {
 	z-index: 3; /*so the highlight from hovering doesn't get covered up by adjacent buildings*/
 }
+
+
+/* ocean bag -------------------------------*/
+#ocean_bag {
+	width: 300px;
+	z-index: 4;
+	left: 500px;
+	top: -450px;
+	margin: auto;
+}
+
+#ocean_bag_background {
+	width: 200px;
+	height: 200px;
+	left: 50px;
+	top: 50px;
+	border-radius: 225px;
+	box-shadow: 0 0 70px 70px white;
+	background-color: white;
+}
+
+#ocean_bag_image {
+	width: 300px;
+	z-index: 5;
+}
+

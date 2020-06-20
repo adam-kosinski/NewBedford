@@ -107,6 +107,22 @@ socket.on("build", function(name, building){
 	building_areas[name].build(building);
 });
 
+socket.on("show_ocean_bag", function(){
+	showOceanBag(); //whaling.js
+});
+
+socket.on("hide_ocean_bag", function(){
+	hideOceanBag(); //whaling.js
+});
+
+socket.on("clear_previous_whales", function(){
+	clearPreviousWhales(); //whaling.js
+});
+
+socket.on("draw_whale", function(type, index){
+	drawWhale(type, index); //whaling.js
+});
+
 socket.on("set_turn", function(name){
 	setTurn(name); //see update.js
 });
@@ -114,12 +130,12 @@ socket.on("set_turn", function(name){
 socket.on("banner", function(message){
 	banner.textContent = message;
 	banner.style.display = "block";
-	fadeAnimate(banner, 0, 1, 1500, function(){
+	fadeAnimate(banner, 0, 1, 1000, function(){
 		setTimeout(function(){
 			fadeAnimate(banner, 1, 0, 1000, function(){
 				banner.style.display = "none";
 				socket.emit("done");
 			});
-		}, 3500);
+		}, 1000);
 	});
 });

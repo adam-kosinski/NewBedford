@@ -318,9 +318,7 @@ function moveShip(name, which_ship, where, priority=1, emit_done=true){
 		let dock_slot = getOpenDockSlot();
 		let endpoint = getLocation(dock_slot, animation_div); //this is top middle of slot, want top-left of ship so need to modify a bit
 		endpoint.x -= 0.5*ship.width;
-		
-		console.log(dock_slot.width, ship.width);
-		
+				
 		changeParent(ship, animation_div);
 		moveAnimate(ship, ocean, startpoint, endpoint, ship_fast_animation_speed, function(){
 			changeParent(ship, dock_slot);

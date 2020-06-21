@@ -20,6 +20,11 @@ function init_game_display(players, game){
 	ocean_image.id = "ocean_image";
 	ocean.appendChild(ocean_image);
 	
+	//add ship highlighter
+	ship_highlighter = document.createElement("div");
+	ship_highlighter.id = "ship_highlighter";
+	ocean.appendChild(ship_highlighter);
+	
 	//position menus correctly
 	document.getElementById("menus").style.left = game.players.includes(my_name) ? "370px" : "250px";
 	
@@ -188,6 +193,32 @@ function init_game_display(players, game){
 			
 			dock_slot.appendChild(ship);
 		}
+	}
+	
+	//display any drawn whales
+	for(let i=0; i<game.ocean.whaling_result.length; i++){
+		let whale_type = game.ocean.whaling_result[i]; //"empty_sea","right_whale","bowhead_whale", "sperm_whale", or undefined if it was taken
+		if(whale_type == undefined){
+			continue;
+		}
+		
+		let whale = document.createElement("img");
+		whale.src = "/static/images/" + whale_type + ".png";
+		whale.id = "whale_" + i;
+		whale.className = "whale";
+		if(whale_type == "empty_sea"){whale.classList.add("empty_sea");}
+		
+		whale.style.left = whale_storage_origin.x + "px";
+		whale.style.top = whale_storage_origin.y + i*whale_storage_offset_y + "px";
+		
+		ocean.appendChild(whale);
+	}
+	
+	//get correct whale chooser
+	if(game.ocean.whale_choose_idx != undefined){
+		let choosing_ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
+		console.log(choosing_ship);
+		setWhaleChooser(choosing_ship.owner, choosing_ship.type); //whaling.js
 	}
 	
 	updateGameDivSize();

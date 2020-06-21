@@ -98,6 +98,7 @@ function give(to, data, from){
 	
 	if(give_array.length == 0){ //this can happen when launching a ship for 0 food using the bonus
 		socket.emit("done");
+		return;
 	}
 	
 	//give them with pauses in between
@@ -287,7 +288,7 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 
 function moveShip(name, which_ship, where, priority=1, emit_done=true){
 	//name: player name
-	//which_ship: "small" or "big"
+	//which_ship: "small_ship" or "big_ship"
 	/*where: One of -
 		"player_board" (to return to storage)
 		"dock" (to prepare it)
@@ -302,11 +303,11 @@ function moveShip(name, which_ship, where, priority=1, emit_done=true){
 	//note: ship's z-index will be set to 4-priority (priority 1,2,3 maps to z-index: 3,2,1)
 	
 	
-	let ship = player_boards[name][which_ship + "_ship"];
+	let ship = player_boards[name][which_ship];
 	let startpoint = getLocation(ship, animation_div);
 	
 	if(where == "player_board"){
-		let endpoint = getLocation(which_ship + "_ship_storage", animation_div, name);
+		let endpoint = getLocation(which_ship + "_storage", animation_div, name);
 		
 		changeParent(ship, animation_div);
 		moveAnimate(ship, player_board_container, startpoint, endpoint, ship_fast_animation_speed, function(){

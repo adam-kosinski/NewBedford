@@ -4,6 +4,7 @@
 #game_div
 	#player_scroll_wrapper - 10
 		.player_board .disconnected - 10
+		.small_ship, .big_ship - 0 (until changed by going whaling)
 
 	#menus - 5
 
@@ -18,6 +19,7 @@
 		.building:hover - 3
 		.dock_slot - 11 through 18
 		ships on whaling track - 1 through 3, depending on priority
+		.whale:hover - 1
 	
 	#animation_div - 14
 		.animated_resource - 15
@@ -158,11 +160,23 @@ p {
 .small_ship {
 	height: 25px; /*need both of them so init.js knows how much to offset by*/
 	width: 30px;
+	z-index: 0;
 }
 
 .big_ship {
 	height: 35px;
-	width: 46px;
+	width: 41px;
+	z-index: 0;
+}
+
+#ship_highlighter {
+	display: none;
+	width: 10px;
+	height: 10px;
+	box-shadow: 0 0 20px 20px white;
+	background-color: white;
+	border-radius: 5px;
+	transform: translate(-50%, -50%);
 }
 
 .animated_resource {
@@ -173,6 +187,9 @@ p {
 
 .whale {
 	height: 50px;
+}
+.whale:hover {
+	z-index: 1;
 }
 
 .player_whale { /*whales moving between the ships and the player's returned whales*/
@@ -400,6 +417,33 @@ p {
 
 .building:hover {
 	z-index: 3; /*so the highlight from hovering doesn't get covered up by adjacent buildings*/
+}
+
+
+#choose_whale_sign {
+	display: none;
+	left: 920px;
+}
+#choose_whale_sign p {
+	font-size: 24px;
+	font-weight: bold;
+	width: 150px;
+	top: 30px;
+}
+#choose_whale_arrow {
+	top: 10px;
+	left: 165px;
+	height: 40px;
+	
+	animation-name: bobArrow;
+	animation-duration: 1000ms;
+	animation-iteration-count: infinite;
+	animation-timing-function: ease-in-out;
+}
+@keyframes bobArrow {
+	from{transform: translate(0,0);}
+	50%{transform: translate(0,25px);} /*rotate up (clockwise)*/
+	to{transform: translate(0,0);}
 }
 
 

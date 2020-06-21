@@ -52,8 +52,8 @@ class Player {
 		this.color = undefined; //defined at game start
 		
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
-		this.small_ship = new Ship(name, "small");
-		this.big_ship = new Ship(name, "big");
+		this.small_ship = new Ship(name, "small_ship");
+		this.big_ship = new Ship(name, "big_ship");
 		this.food = 20;
 		this.wood = 20;
 		this.brick = 20;
@@ -66,7 +66,7 @@ class Player {
 }
 
 class Ship {
-	constructor(owner, type){ //owner: a player name, type is "small" or "big"
+	constructor(owner, type){ //owner: a player name, type is "small_ship" or "big_ship"
 		this.owner = owner;
 		this.type = type;
 		this.prepared = false; //if prepared and on the dock
@@ -101,7 +101,7 @@ class Building {
 		//move worker
 		this.workers++;
 		let building_name = this.type; //can't reference 'this' in the queue
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("move_worker", name, building_name);
 			console.log("queue emitting move_worker");
 		});
@@ -110,7 +110,7 @@ class Building {
 		//pay owner if not a town building and don't own the building
 		if(!this.in_town && name != this.owner){
 			let owner = this.owner;
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", owner, {money: 1}, name);
 				players[name].money -= 1;
 				players[owner].money += 1;
@@ -158,6 +158,9 @@ class Ocean { //TODO: fix counts
 		}
 		
 		this.whaling_result = []; //stuff is taken out of this.bag and placed in here when we go whaling - see this.drawWhales()
+		
+		this.whale_choose_queue = []; //array of ships in the ocean, defined by this.initWhaleChooseQueue() below
+		this.whale_choose_idx = undefined; //index in this.whale_choose_queue representing the current choosing ship. undefined if not choosing
 	}
 	getShips(){
 		//returns an array of ships on the ocean in whale-choosing order (first by distance, then by priority)
@@ -187,14 +190,15 @@ class Ocean { //TODO: fix counts
 		});
 		return out;
 	}
-	drawWhales(n_whales){	
+	drawWhales(n_whales){
+		this.bag = this.bag.concat(this.whaling_result); //at this point, whaling result only includes whales not claimed last whaling phase
 		this.whaling_result = []; //clear it from last time
 		
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("show_ocean_bag");
 			console.log("queue emitting show_ocean_bag");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("clear_previous_whales");
 			console.log("queue emitting clear_previous_whales");
 		});
@@ -202,14 +206,25 @@ class Ocean { //TODO: fix counts
 			let whale_idx = Math.floor(Math.random()*this.bag.length);
 			let whale = this.bag.splice(whale_idx, 1)[0]; //take it out of the bag
 			this.whaling_result.push(whale);
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("draw_whale", whale, i);
 				console.log("queue emitting draw whale");
 			});
 		}
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("hide_ocean_bag");
 			console.log("queue emitting hide_ocean_bag");
+		});
+	}
+	initWhaleChooseQueue(){
+		this.whale_choose_queue = this.getShips();
+		this.whale_choose_idx = 0;
+		
+		//tell clients, instant execution by them so no need for "done" reply
+		let first_ship = this.whale_choose_queue[0];
+		queue.add(function(){
+			io.sockets.emit("set_whale_chooser", first_ship.owner, first_ship.type);
+			console.log("queue emitting set_whale_chooser");
 		});
 	}
 }
@@ -249,17 +264,17 @@ class Game {
 			}
 			else {
 				//set it to no one's turn, then do movement phase
-				queue.push(function(){
+				queue.add(function(){
 					io.sockets.emit("set_turn", undefined);
 					console.log("queue emitting set_turn for no one");
 				});
-				this.movementPhase();
+				queue.add(game.movementPhase, true);
 				return;
 			}
 		}
 		//tell sockets to change player turn
 		let cur_player_name = this.players[this.current_player]; //can't use 'this' inside a queue push
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("set_turn", cur_player_name);
 			console.log("queue emitting set_turn for "+cur_player_name);
 		});
@@ -271,42 +286,33 @@ class Game {
 		//do ships at distance 2+ all at once
 		
 		if(show_banner){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("banner","Movement Phase");
 				console.log("queue emitting movement phase banner");
 			});
 		}
 		
-		//move all ships one unit towards land, simultaneously. Check if the ship needs to be returned in the process.
-		queue.push(function(){
-			for(let i=0; i<game.players.length; i++){
-				let name = game.players[i];
-				let small = players[name].small_ship;
-				let big = players[name].big_ship;
-				
-				if(small.distance != undefined){
-					small.distance -= 1;
-					if(small.distance <= -1){
-						game.return_queue.push(small);
+		let ships = game.ocean.getShips();
+		console.log("ships",ships);
+		
+		if(ships.length > 0){
+			//move all ships one unit towards land, simultaneously. Check if the ship needs to be returned in the process.
+			queue.add(function(){
+				for(let i=0; i<ships.length; i++){		
+					ships[i].distance -= 1;
+					if(ships[i].distance <= -1){
+						game.return_queue.push(ships[i]);
 					}
-					io.sockets.emit("move_ship",name,"small","to_shore");
+					io.sockets.emit("move_ship", ships[i].owner, ships[i].type, "to_shore");
 				}
-				if(big.distance != undefined){
-					big.distance -= 1;
-					if(big.distance <= -1){
-						game.return_queue.push(big);
-					}
-					io.sockets.emit("move_ship",name,"big","to_shore");
-				}
-			}
-		});
+			});
+		}
 		
 		//start returning ships
-		let f = function(){
+		queue.add(function(){
+			//this will run when the FIRST ship finishes moving, not the last. However, since they all take the same time, it doesn't matter
 			setTimeout(game.returnNextShip, 500); //setting a timeout so all the excess "done" events we receive from the ship movement don't spill over to later queue items
-		}
-		f.done_not_required = true; //clients not involved in this function
-		queue.push(f);
+		}, true);
 	}
 	returnNextShip(){
 		//called by this.movementPhase(), and called whenever a ship finishes returning, until no ships left to return.
@@ -328,17 +334,18 @@ class Game {
 		//TODO do the actual returning stuff
 	}
 	whalingPhase(){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("banner","Whaling Phase");
 			console.log("queue emitting whaling phase banner");
 		});
 		
-		console.log(this.ocean);
-		console.log(this.ocean.getShips());
-		
 		let ocean_ships = this.ocean.getShips();
 		if(ocean_ships.length > 0){
 			this.ocean.drawWhales(ocean_ships.length + 1);
+			this.ocean.initWhaleChooseQueue();
+		}
+		else {
+			this.nextRound();
 		}
 	}
 	nextRound(){
@@ -459,7 +466,7 @@ io.on("connection", function(socket) {
 		buildings[build_type].placeWorker(id_to_name[socket.id], data);
 	});
 	
-	socket.on("choose_whale", function(whale, ship){ //whale: int, ship: 0|1
+	socket.on("choose_whale", function(whale){ //whale: idx in game.ocean.whaling_result
 		
 	});
 	
@@ -469,6 +476,7 @@ io.on("connection", function(socket) {
 		if(index != -1){
 			busy_clients.splice(index, 1);
 		}
+		//console.log(name + " done");
 	});
 	
 });
@@ -487,12 +495,17 @@ function clearGame(){
 //have completed the previous thing.
 
 let queue = []; //filled with action functions - just functions to run. If have the property done_not_required (set to true), won't wait for clients to respond before moving onto next one
-//items with lower indices are processed first, so to add an action object to the queue, do queue.push(object)
+//items with lower indices are processed first; to add an action object to the end of the queue, do queue.add(object, done_not_required=false)
+
+queue.add = function(f, done_not_required=false){
+	f.done_not_required = done_not_required;
+	queue.push(f);
+}
 
 let busy_clients = []; //filled with connected player names, when client finishes a task, name is removed. If empty, we can do the next task
 //note - if a client disconnects, they're automatically removed - see above
 function process_queue(){
-		
+	
 	if(queue.length > 0 && busy_clients.length == 0){
 		
 		let action = queue.splice(0,1)[0];
@@ -525,7 +538,7 @@ function initBuildings(){
 	//central town
 	new Building("town_hall", true, function(name, data){
 		let cost = data.cost;
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give","town_hall",cost,name);
 			players[name].food -= cost.food;
 			players[name].wood -= cost.wood;
@@ -533,7 +546,7 @@ function initBuildings(){
 			players[name].money -= cost.money;
 			console.log("emitted give to town hall");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("build", name, data.building_to_build);
 			console.log("emitted build");
 		});
@@ -541,14 +554,14 @@ function initBuildings(){
 
 	new Building("general_store", true,
 		function(name, data){ //data here is {resource: amount_sold, etc.}
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", "general_store", data, name);
 				players[name].food -= data.food;
 				players[name].wood -= data.wood;
 				players[name].brick -= data.brick;
 				console.log("queue emitting general_store sell");
 			});
-			queue.push(function(){
+			queue.add(function(){
 				let value = data.food + data.wood + 2*data.brick;
 				io.sockets.emit("give", name, {money: value + 1}, "general_store");
 				players[name].money += value + 1;
@@ -556,14 +569,14 @@ function initBuildings(){
 			});
 		},
 		function(name, data){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", "general_store", data, name);
 				players[name].food -= data.food;
 				players[name].wood -= data.wood;
 				players[name].brick -= data.brick;
 				console.log("queue emitting general_store sell");
 			});
-			queue.push(function(){
+			queue.add(function(){
 				let value = data.food + data.wood + 2*data.brick;
 				io.sockets.emit("give", name, {money: value}, "general_store");
 				players[name].money += value;
@@ -574,14 +587,14 @@ function initBuildings(){
 
 	new Building("forest", true,
 		function(name){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, {wood: 3}, "forest");
 				players[name].wood += 3;
 				console.log("queue emitting forest give");
 			}); 
 		},
 		function(name){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, {wood: 2}, "forest");
 				players[name].wood += 2;
 				console.log("queue emitting forest give");
@@ -591,14 +604,14 @@ function initBuildings(){
 
 	new Building("farm", true,
 		function(name){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, {food: 3}, "farm");
 				players[name].food += 3;
 				console.log("queue emitting farm give");
 			});
 		},
 		function(name){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, {food: 2}, "farm");
 				players[name].food += 2;
 				console.log("queue emitting farm give");
@@ -608,7 +621,7 @@ function initBuildings(){
 
 	new Building("warehouse", true,
 		function(name, data){ //data in form of a give object {resource:amount, etc.}
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, data, "warehouse");
 				for(resource in data){
 					players[name][resource] += data[resource];
@@ -617,7 +630,7 @@ function initBuildings(){
 			});
 		},
 		function(name){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give", name, {brick: 1}, "warehouse");
 				players[name].brick += 1;
 				console.log("queue emitting warehouse give");
@@ -630,36 +643,36 @@ function initBuildings(){
 
 	new Building("dockyard", true,
 		function(name, data){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give","dockyard",{wood: 1}, name);
 				players[name].wood -= 1;
 				console.log("emitting dockyard preparation");
 			});
-			queue.push(function(){
-				players[name][data.which_ship+"_ship"].prepared = true;
+			queue.add(function(){
+				players[name][data.which_ship].prepared = true;
 				io.sockets.emit("move_ship", name, data.which_ship, "dock");
 			});
 		},
 		function(name, data){
-			queue.push(function(){
+			queue.add(function(){
 				io.sockets.emit("give","dockyard",{wood: 2}, name);
 				players[name].wood -= 2;
 				console.log("emitting dockyard preparation");
 			});
-			queue.push(function(){
-				players[name][data.which_ship+"_ship"].prepared = true;
+			queue.add(function(){
+				players[name][data.which_ship].prepared = true;
 				io.sockets.emit("move_ship", name, data.which_ship, "dock");
 			});
 		}
 	);
 
 	new Building("city_pier", true, function(name, data){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give","city_pier",{food: data.cost},name);
 			players[name].food -= data.cost;
 			console.log("queue emitting city_pier launch");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			launch_ship(name, data);
 		});
 	});
@@ -680,7 +693,7 @@ function initBuildings(){
 
 	new Building("courthouse", false, function(name, data){
 		let cost = data.cost;
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give","courthouse",cost,name);
 			players[name].food -= cost.food;
 			players[name].wood -= cost.wood;
@@ -688,25 +701,25 @@ function initBuildings(){
 			players[name].money -= cost.money;
 			console.log("emitted give to town hall");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("build", name, data.building_to_build);
 			console.log("emitted build");
 		});
 	});
 
 	new Building("dry_dock", false, function(name, data){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give","dry_dock",{wood: 2, food: data.cost},name);
 			players[name].wood -= 2;
 			players[name].food -= data.cost;
 			console.log("queue emitting dry_dock launch");
 		});
-		queue.push(function(){
-			let which_ship = players[name].small_ship.distance == undefined ? "small" : "big";
-			players[name][which_ship+"_ship"].prepared = true;
+		queue.add(function(){
+			let which_ship = players[name].small_ship.distance == undefined ? "small_ship" : "big_ship";
+			players[name][which_ship].prepared = true;
 			io.sockets.emit("move_ship", name, which_ship, "dock");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			launch_ship(name, data);
 		});
 	});
@@ -716,14 +729,14 @@ function initBuildings(){
 	new Building("lighthouse", false, function(name){});
 
 	new Building("lumber_mill", false, function(name, data){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give", "lumber_mill", data, name);
 			players[name].food -= data.food;
 			players[name].wood -= data.wood;
 			players[name].brick -= data.brick;
 			console.log("queue emitting lumber_mill sell");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			let value = 2*data.wood;
 			io.sockets.emit("give", name, {money: value}, "lumber_mill");
 			players[name].money += value;
@@ -733,14 +746,14 @@ function initBuildings(){
 	new Building("mansion", false, function(name){});
 
 	new Building("market", false, function(name, data){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give", "market", data, name);
 			players[name].food -= data.food;
 			players[name].wood -= data.wood;
 			players[name].brick -= data.brick;
 			console.log("queue emitting market sell");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			let value = (data.food>0? data.food+1 : 0) + (data.wood>0? data.wood+1 : 0) + 2*(data.brick>0? data.brick+1 : 0);
 			io.sockets.emit("give", name, {money: value}, "market");
 			players[name].money += value;
@@ -760,12 +773,12 @@ function initBuildings(){
 	new Building("tryworks", false, function(name){});
 
 	new Building("wharf", false, function(name, data){
-		queue.push(function(){
+		queue.add(function(){
 			io.sockets.emit("give","wharf",{food: data.cost},name);
 			players[name].food -= data.cost;
 			console.log("queue emitting wharf launch");
 		});
-		queue.push(function(){
+		queue.add(function(){
 			launch_ship(name, data);
 		});
 	});
@@ -776,8 +789,8 @@ function initBuildings(){
 //function to launch a ship, used by the city_pier, dry_dock, and wharf building actions
 function launch_ship(name, data){
 	//Launch ship. Need to determine which ship and priority first
-	let which_ship = players[name].small_ship.prepared ? "small" : "big";
-	players[name][which_ship+"_ship"].prepared = false; //not prepared anymore
+	let which_ship = players[name].small_ship.prepared ? "small_ship" : "big_ship";
+	players[name][which_ship].prepared = false; //not prepared anymore
 	
 	//iterate through all ships to figure out who's already at that distance
 	let max_existing_priority = 0;
@@ -794,8 +807,8 @@ function launch_ship(name, data){
 	
 	let priority = max_existing_priority + 1;
 	
-	players[name][which_ship+"_ship"].priority = priority;
-	players[name][which_ship+"_ship"].distance = data.distance;
+	players[name][which_ship].priority = priority;
+	players[name][which_ship].distance = data.distance;
 	
 	io.sockets.emit("move_ship", name, which_ship, data.distance, priority);
 }

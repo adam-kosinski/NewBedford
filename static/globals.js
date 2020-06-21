@@ -12,6 +12,8 @@ let board = document.getElementById("board");
 let town = document.getElementById("town");
 let ocean = document.getElementById("ocean");
 let ocean_bag = document.getElementById("ocean_bag");
+let ship_highlighter; //created in init.js
+let choose_whale_sign = document.getElementById("choose_whale_sign");
 
 let first_player_token = document.getElementById("first_player_token");
 
@@ -50,8 +52,8 @@ let my_turn = false;
 let town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet
 	x_min: 376,
 	x_max: 766,
-	y_min: 80,
-	y_max: 470
+	y_min: 90,
+	y_max: 480
 };
 //holds the town bounding box relative to the board div, set with getTownBoundingBox() in buildings.js.
 //Used for resizing the layout when buildings are built, see buildings.js

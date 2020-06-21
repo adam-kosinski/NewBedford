@@ -82,10 +82,11 @@ socket.on("start_game", function(players, game){
 });
 
 
-socket.on("state", function(players, game){
-	console.log(players, game);
-});
-
+function getState(){ //debugging only
+	socket.emit("get_state",function(players,game){
+		console.log(players,game);
+	});
+}
 
 
 //events requiring "done" emit when finished
@@ -125,6 +126,10 @@ socket.on("draw_whale", function(type, index){
 
 socket.on("set_turn", function(name){
 	setTurn(name); //see update.js
+});
+
+socket.on("set_whale_chooser", function(name, which_ship){
+	setWhaleChooser(name, which_ship); //whaling.js
 });
 
 socket.on("banner", function(message){

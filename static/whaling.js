@@ -1,8 +1,9 @@
 
 function showOceanBag(){
 	//we're going to animate this one as a child of the game div
-	let startpoint = getLocation(ocean_bag, game_div);
-	let endpoint = {x: startpoint.x, y: 200};
+	let ocean_pos = getLocation(ocean, game_div);
+	let startpoint = {x: ocean_pos.x - 320, y: ocean_pos.y - 535};
+	let endpoint = {x: startpoint.x, y: ocean_pos.y + 115};
 	console.log("startpoint",startpoint);
 	console.log("endpoint",endpoint);
 	moveAnimate(ocean_bag, animation_div, startpoint, endpoint, ocean_bag_speed, function(){
@@ -13,8 +14,9 @@ function showOceanBag(){
 
 function hideOceanBag(){
 	//we're going to animate this one as a child of the game div
-	let startpoint = getLocation(ocean_bag, game_div);
-	let endpoint = {x: startpoint.x, y: -450};
+	let ocean_pos = getLocation(ocean, game_div);
+	let startpoint = {x: ocean_pos.x - 320, y: ocean_pos.y + 115};
+	let endpoint = {x: startpoint.x, y: ocean_pos.y - 535};
 	console.log("startpoint",startpoint);
 	console.log("endpoint",endpoint);
 	moveAnimate(ocean_bag, animation_div, startpoint, endpoint, ocean_bag_speed, function(){
@@ -101,8 +103,66 @@ function drawWhale(type, index){
 			changeParent(whale, animation_div);
 			moveAnimate(whale, ocean, startpoint_2, endpoint_2, whale_fast_speed, function(){
 				changeParent(whale, ocean);
+				whale.style.zIndex = ""; //reset it to default so the :hover styling can work
 				socket.emit("done");
 			});
 		}, 100);
 	});
+}
+
+
+
+function highlightShip(name, which_ship){
+	//name: player name
+	//which_ship: "small_ship" or "big_ship"
+	
+	let ship = player_boards[name][which_ship];
+	let ship_center_pos = getLocation(ship, ocean, undefined, true);
+	
+	ship_highlighter.style.width = which_ship == "small_ship" ? "10px" : "20px";
+	ship_highlighter.style.height = which_ship == "small_ship" ? "10px" : "20px";
+	ship_highlighter.style.left = ship_center_pos.x + "px";
+	ship_highlighter.style.top = ship_center_pos.y + "px";
+	ship_highlighter.style.zIndex = ship.style.zIndex; //ship guaranteed to have a styled z-index b/c I started them w/ z-index 0
+	//also guaranteed to be behind the ship since I added the highlighter to the ocean div before the ship
+	
+	ship_highlighter.style.display = "block";
+}
+
+
+function setWhaleChooser(name, which_ship){
+	//name: name of the player currently choosing a whale, or undefined if no one is
+	//which_ship: "small_ship" or "big_ship"
+	
+	if(name == undefined){
+		ship_highlighter.style.display = "none";
+		choose_whale_sign.style.display = "none";
+		socket.emit("done");
+		return;
+	}
+	
+	highlightShip(name, which_ship);
+	let whale_options = ocean.getElementsByClassName("whale");
+	
+	if(name == my_name){
+		//show choose whale sign and display tiles as clickable
+		let ocean_pos = getLocation(ocean, game_div);
+		choose_whale_sign.style.left = ocean_pos.x + 100 + "px";
+		choose_whale_sign.style.top = ocean_pos.y - 85 + "px";
+		choose_whale_sign.style.display = "block";
+		
+		for(let i=0; i<whale_options.length; i++){
+			if(! whale_options[i].classList.contains("empty_sea")){
+				whale_options[i].classList.add("selectable");
+			}
+		}
+	}
+	else {
+		choose_whale_sign.style.display = "none";
+		for(let i=0; i<whale_options.length; i++){
+			whale_options[i].classList.remove("selectable");
+		}
+	}
+	
+	socket.emit("done");
 }

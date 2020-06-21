@@ -80,7 +80,7 @@ document.addEventListener("click", function(e){
 				return;
 			}
 			
-			let which_ship = available_ships[0].className.match(/small|big/)[0];
+			let which_ship = available_ships[0].className.match(/small_ship|big_ship/)[0];
 			socket.emit("place_worker", "dockyard", {which_ship: which_ship});
 		}
 		else if(building == "city_pier"){

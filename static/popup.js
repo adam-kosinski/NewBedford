@@ -299,6 +299,9 @@ document.addEventListener("click", function(e){
 	
 	//launch popup
 	if(e.target.tagName == "TR" || e.target.parentElement.tagName == "TR" || e.target.parentElement.parentElement.tagName == "TR"){
+		//note: that if statement has the potential to produce errors if the element is doesn't have enough parents going up
+		//I don't really care though, if it gets that far up the tree nothing should be happening anyways. Also this is a v v v rare event
+		
 		let tr = e.target.tagName == "TR" ? e.target : 
 			e.target.parentElement.tagName == "TR" ? e.target.parentElement : e.target.parentElement.parentElement;
 		

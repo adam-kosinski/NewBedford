@@ -185,16 +185,12 @@ p {
 	z-index: 15;
 }
 
-.whale {
+.whale { /*for whale tokens used during the whaling phase only*/
 	height: 50px;
 	width: 50px;
 }
 .whale:hover {
 	z-index: 1;
-}
-
-.player_whale { /*whales moving between the ships and the player's returned whales*/
-	height: 30px;
 }
 
 .selectable:hover {
@@ -310,6 +306,11 @@ p {
 	top: 85px;
 	left: 98px;
 }
+.player_board table.returning {
+	background-color: rgba(100, 255, 150, 0.3);
+	box-shadow: 0 0 6px 6px rgb(100, 255, 150);
+	border-radius: 5px;
+}
 
 .player_board .whale_counter {
 	font-size: 14px;
@@ -360,6 +361,9 @@ p {
 	left: 156px;
 	top: 135px;
 }
+#my_player_board table.returning {
+	box-shadow: 0 0 10px 10px rgb(100, 255, 150);
+}
 #my_player_board .whale_counter {
 	font-size: 18px;
 	line-height: 40px;
@@ -408,6 +412,10 @@ p {
 	width: 250px;
 }
 
+#round_counter_whale {
+	height: 50px;
+}
+
 .building {
 	width: 100px; /*size also defined in globals.js to use for placement calcs*/
 	height: 100px;
@@ -429,7 +437,20 @@ p {
 	font-size: 24px;
 	font-weight: bold;
 	width: 150px;
-	top: 30px;
+	top: 10px;
+}
+#choose_whale_pass_button {
+	top: 40px;
+	left: 90px;
+	font-size: 18px;
+	width: 60px;
+	height: 30px;
+	border-radius: 5px;
+	background-color: burlywood;
+	cursor: pointer;
+}
+#choose_whale_pass_button:hover {
+	background-color: #faf3eb; /*lighter burlywood*/
 }
 #choose_whale_arrow {
 	top: 10px;

@@ -307,6 +307,8 @@ function moveShip(name, which_ship, where, priority=1, emit_done=true){
 	let startpoint = getLocation(ship, animation_div);
 	
 	if(where == "player_board"){
+		ship_highlighter.style.display = "none"; //only time we call this is when a return is finishing and this ship was highlighted. So, remove the highlight
+		
 		let endpoint = getLocation(which_ship + "_storage", animation_div, name);
 		
 		changeParent(ship, animation_div);
@@ -451,3 +453,50 @@ function setTurn(name){ //name of player, or undefined to set it to no one's tur
 	socket.emit("done");
 }
 
+
+
+function moveRoundCounterWhale(animate=true){
+	//round will be the number we should end up on
+	
+	let startpoint = getLocation(round_counter_whale, ocean);
+	let endpoint = {};
+	
+	if(round < 7){
+		endpoint.x = round_counter_origin.x;
+		endpoint.y = round_counter_origin.y + (round-1)*round_counter_offset;
+	}
+	else {
+		endpoint.x = round_counter_origin.x + round_counter_offset;
+		endpoint.y = round_counter_origin.y + (12-round)*round_counter_offset;
+	}
+	
+	if(animate){
+		//animate but keep as a child of the ocean
+		moveAnimate(round_counter_whale, animation_div, startpoint, endpoint, whale_counter_speed, function(){
+			socket.emit("done");
+		});
+	}
+	else {
+		round_counter_whale.style.left = endpoint.x + "px";
+		round_counter_whale.style.top = endpoint.y + "px";
+	}
+}
+
+
+
+function moveFirstPlayerToken(name){
+	//name: name of player to move it to
+	
+	let destination = player_boards[name].first_player_token_spot;
+	
+	let startpoint = getLocation(first_player_token, animation_div);
+	let endpoint = getLocation(destination, animation_div);
+	endpoint.x += 5; //account for padding
+	endpoint.y += 5;
+	
+	changeParent(first_player_token, animation_div);
+	moveAnimate(first_player_token, player_board_container, startpoint, endpoint, first_player_token_speed, function(){
+		changeParent(first_player_token, destination);
+		socket.emit("done");
+	});
+}

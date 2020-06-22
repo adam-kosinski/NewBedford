@@ -130,6 +130,8 @@ function setWhaleChooser(name, which_ship){
 	//name: name of the player currently choosing a whale, or undefined if no one is
 	//which_ship: "small_ship" or "big_ship"
 	
+	console.log("server says: set whale chooser",name,which_ship);
+	
 	if(name == undefined){
 		ship_highlighter.style.display = "none";
 		choose_whale_sign.style.display = "none";
@@ -194,6 +196,81 @@ function chooseWhale(name, which_ship, whale_type, idx){
 
 
 
+function startReturn(name, which_ship, emit_done=true){
+	//name: name of player who's starting to return their ship
+	//which_ship: "small_ship" or "big_ship"
+	
+	//display on GUI
+	highlightShip(name, which_ship);
+	player_boards[name][which_ship + "_whale_counter_table"].classList.add("returning");
+	
+	if(name == my_name){
+		//make whales selectable
+		let right_whales = player_boards[name][which_ship + "_right_whale_counter"];
+		let bowhead_whales = player_boards[name][which_ship + "_bowhead_whale_counter"];
+		let sperm_whales = player_boards[name][which_ship + "_sperm_whale_counter"];
+		
+		if(right_whales.textContent != "0"){right_whales.classList.add("selectable");}
+		if(bowhead_whales.textContent != "0"){bowhead_whales.classList.add("selectable");}
+		if(sperm_whales.textContent != "0"){sperm_whales.classList.add("selectable");}
+		
+		alert("Return the whales on your " + which_ship.replace("_"," ") + ". Click to pay for a whale, shift click to sell it.");
+	}
+	
+	if(emit_done){socket.emit("done");}
+}
+
+function returnWhale(name, which_ship, whale_type){
+	//name: name of player returning a whale
+	//which_ship: "small_ship" or "big_ship"
+	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	
+	//decrement the ship's whale counter
+	let ship_counter = player_boards[name][which_ship + "_" + whale_type + "_counter"]
+	ship_counter.subtractOne();
+	if(ship_counter.textContent == "0"){
+		ship_counter.classList.remove("selectable");
+	}
+	
+	//animate a whale going to the return spot
+	let whale = document.createElement("img");
+	whale.className = "whale_counter"; //take advantage of this class's already-done width and height styling
+	whale.src = "/static/images/" + whale_type + ".png";
+	player_boards[name].div.appendChild(whale);
+	
+	let startpoint = player_boards[name].location[which_ship + "_" + whale_type];
+	startpoint.x -= 0.5*whale.width;
+	startpoint.y -= 0.5*whale.height;
+	
+	let endpoint = player_boards[name].location[whale_type];
+	endpoint.x -= 0.5*whale.width;
+	endpoint.y -= 0.5*whale.height;
+	
+	//animate as child of the player board
+	moveAnimate(whale, animation_div, startpoint, endpoint, whale_return_speed, function(){
+		whale.remove();
+		player_boards[name][whale_type + "_counter"].addOne();
+		socket.emit("done");
+	});
+}
+
+function finishReturn(){
+	
+	//remove styling showing that a ship is returning
+	//highlight was already removed in moveShip(), called by the server before this function
+	let table = document.getElementsByClassName("returning")[0];
+	table.classList.remove("returning");
+	
+	//whale counters from the returned ship should by this point not be selectable, so don't need to do anything there
+	
+	socket.emit("done"); //wow that was really a three line function
+}
+
+
+
+// --------- EVENT LISTENERS ---------------------------------------------------------------------------------------
+
+
 //Event listner for choosing whales
 
 ocean.addEventListener("click",function(e){
@@ -204,4 +281,32 @@ ocean.addEventListener("click",function(e){
 	let idx = Number(e.target.id.match(/\d+/)[0]);
 	console.log("choose whale", idx);
 	socket.emit("choose_whale", idx);
+});
+
+
+
+//Event listener for passing on choosing whales (if can't or if don't want to)
+
+choose_whale_pass_button.addEventListener("click", function(e){
+	socket.emit("choose_whale", undefined);
+});
+
+
+//Event listener for returning a whale
+
+document.addEventListener("click", function(e){
+	if( ! (e.target.classList.contains("whale_counter") && e.target.classList.contains("selectable")) ){
+		return;
+	}
+	
+	let whale_type = e.target.className.match(/right_whale|bowhead_whale|sperm_whale/)[0];
+	
+	if(e.shiftKey){
+		//TODO sell the whale
+	}
+	else {
+		//return the whale
+		console.log("return",whale_type);
+		socket.emit("return_whale", whale_type);
+	}
 });

@@ -196,6 +196,7 @@ class BuildingArea {
 					changeParent(board, game_div);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
+					animation_div.style.zIndex = z;
 				});
 			}
 			else {
@@ -213,6 +214,7 @@ class BuildingArea {
 					changeParent(town, board);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
+					animation_div.style.zIndex = z;
 				});
 			}
 			else {
@@ -230,6 +232,7 @@ class BuildingArea {
 					changeParent(ocean, board);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
+					animation_div.style.zIndex = z;
 				});
 			}
 			else {
@@ -240,7 +243,10 @@ class BuildingArea {
 		}
 		
 		//restore animation div's z index
-		animation_div.style.zIndex = z;
+		if(!animate){
+			animation_div.style.zIndex = z;
+		}
+		//if animate is true, this is done in the finish function
 	}
 }
 
@@ -291,7 +297,7 @@ function updateGameDivSize(){
 	let ocean_box = ocean.getBoundingClientRect();
 	
 	game_div.style.width = ocean_box.right - game_div_box.x + 10 + "px";
-	game_div.style.height = town_bounding_box.y_max + 30 + "px";
+	game_div.style.height = town_bounding_box.y_max - game_div_box.y + 30 + "px";
 }
 
 

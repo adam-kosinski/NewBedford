@@ -78,6 +78,7 @@ socket.on("player_connection", function(players){
 
 socket.on("start_game", function(players, game){
 	game_active = true;
+	round = 0;
 	init_game_display(players, game); //see init.js
 });
 
@@ -85,6 +86,11 @@ socket.on("start_game", function(players, game){
 function getState(){ //debugging only
 	socket.emit("get_state",function(players,game){
 		console.log(players,game);
+	});
+}
+function getQueue(){ //debugging only
+	socket.emit("get_queue",function(queue,busy_clients){
+		console.log(queue, busy_clients);
 	});
 }
 
@@ -134,6 +140,27 @@ socket.on("set_whale_chooser", function(name, which_ship){
 
 socket.on("choose_whale", function(name, which_ship, whale_type, idx){
 	chooseWhale(name, which_ship, whale_type, idx); //whaling.js
+});
+
+socket.on("start_return", function(name, which_ship){
+	startReturn(name, which_ship); //whaling.js
+});
+
+socket.on("return_whale", function(name, which_ship, whale_type){
+	returnWhale(name, which_ship, whale_type); //whaling.js
+});
+
+socket.on("finish_return", function(){
+	finishReturn(); //whaling.js
+});
+
+socket.on("move_round_counter_whale", function(game_round){
+	round = game_round;
+	moveRoundCounterWhale(); //update.js
+});
+
+socket.on("move_first_player_token", function(name){
+	moveFirstPlayerToken(name); //update.js
 });
 
 socket.on("banner", function(message){

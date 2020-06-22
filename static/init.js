@@ -25,6 +25,14 @@ function init_game_display(players, game){
 	ship_highlighter.id = "ship_highlighter";
 	ocean.appendChild(ship_highlighter);
 	
+	//add round counter whale and put it in correct place
+	round_counter_whale = document.createElement("img");
+	round_counter_whale.src = "/static/images/round_counter_whale.png";
+	round_counter_whale.id = "round_counter_whale";
+	ocean.appendChild(round_counter_whale);
+	round = game.round;
+	moveRoundCounterWhale(false);
+	
 	//position menus correctly
 	document.getElementById("menus").style.left = game.players.includes(my_name) ? "370px" : "250px";
 	
@@ -50,6 +58,11 @@ function init_game_display(players, game){
 		player_board.big_ship_right_whale_counter.set(players[name].big_ship.right_whales);
 		player_board.big_ship_bowhead_whale_counter.set(players[name].big_ship.bowhead_whales);
 		player_board.big_ship_sperm_whale_counter.set(players[name].big_ship.sperm_whales);
+		
+		//display returned whales
+		player_board.right_whale_counter.set(players[name].right_whales);
+		player_board.bowhead_whale_counter.set(players[name].bowhead_whales);
+		player_board.sperm_whale_counter.set(players[name].sperm_whales);
 	}
 	
 	//display whales sitting on ships
@@ -57,9 +70,11 @@ function init_game_display(players, game){
 		let name = game.players[p];
 	}
 	
-	//create building areas - everyone has the same order for these
-	for(let i=0; i<game.players.length; i++){
-		new BuildingArea(game.players[i]);
+	//create building areas - everyone should have the same order for these, so use order from the server's players object (game order cycles based on round)
+	for(let name in players){
+		if(game.players.includes(name)){
+			new BuildingArea(name);
+		}
 	}
 	
 	
@@ -230,11 +245,18 @@ function init_game_display(players, game){
 	//get correct whale chooser
 	if(game.ocean.whale_choose_idx != undefined){
 		let choosing_ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
-		console.log(choosing_ship);
 		setWhaleChooser(choosing_ship.owner, choosing_ship.type); //whaling.js
 	}
-		
 	
+	//show returning ship if a ship is returning right now
+	if(game.return_queue.length > 0){
+		let ship = game.return_queue[0];
+		startReturn(ship.owner, ship.type, false);
+	}
+	
+	
+	
+	town_bounding_box = getTownBoundingBox();
 	updateGameDivSize();
 	
 	//set the correct player's turn
@@ -401,7 +423,6 @@ class PlayerBoard {
 		
 		
 		//whale counters
-		
 		newWhaleCounterTable("returned_counters", "", this); //see below for function definition
 		newWhaleCounterTable("small_ship_counters", "small_ship_", this);
 		newWhaleCounterTable("big_ship_counters", "big_ship_", this);
@@ -422,7 +443,8 @@ function newWhaleCounter(type) { //used by the PlayerBoard constructor to avoid 
 	//type can be "right_whale" "bowhead_whale" or "sperm_whale"
 	
 	let div = document.createElement("div");
-	div.className = "whale_counter";
+	div.classList.add("whale_counter");
+	div.classList.add(type + "_counter");
 	div.textContent = "0";
 	
 	div.set = function(n){
@@ -463,6 +485,7 @@ function newWhaleCounterTable(className, prefix, player_board){
 	tbody.appendChild(tr);
 	table.appendChild(tbody);
 	
+	player_board[prefix + "whale_counter_table"] = table;
 	player_board.div.appendChild(table);
 }
 

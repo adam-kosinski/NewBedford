@@ -336,7 +336,15 @@ class Game {
 			return;
 		}
 		
-		//TODO do the actual returning stuff
+		//return the ship
+		let ship = this.return_queue[0];
+		queue.add(function(){
+			io.sockets.emit("start_return", ship.owner, ship.type);
+			console.log("queue emitting start_return");
+		});
+		
+		//The player will now send "return_whale" or "sell_whale" events one at a time.
+		//When they're done, the server will take the ship out of this.return_queue, and call this function again
 	}
 	whalingPhase(){
 		console.log("Whaling Phase Starting");
@@ -398,12 +406,22 @@ class Game {
 				io.sockets.emit("move_worker", name, "player_board");
 			}
 		});
+		//tell buildings that workers left
+		for(let b=0; b<game.buildings.length; b++){
+			game.buildings[b].workers = 0;
+		}
 		
 		//move whale round counter
-		//TODO
+		queue.add(function(){
+			io.sockets.emit("move_round_counter_whale", game.round)
+			console.log("queue emitting move_round_counter_whale");
+		});
 		
 		//move first player token
-		//TODO
+		queue.add(function(){
+			io.sockets.emit("move_first_player_token", game.players[0]);
+			console.log("queue emitting move_first_player_token");
+		});
 		
 		//set first player turn
 		queue.add(function(){
@@ -473,6 +491,10 @@ io.on("connection", function(socket) {
 		callback(players, game); //if game is undefined, tells them no game currently happening
 	});
 	
+	socket.on("get_queue", function(callback){
+		callback(queue, busy_clients);
+	});
+	
 	socket.on("start_game", function(){
 		//consider putting players in a room? - prob. not, I'll have spectator players for now
 		//consider having a moderator who advances through the phases?
@@ -520,19 +542,24 @@ io.on("connection", function(socket) {
 		buildings[build_type].placeWorker(id_to_name[socket.id], data);
 	});
 	
-	socket.on("choose_whale", function(idx){ //idx: idx in game.ocean.whaling_result
-		let whale_type = game.ocean.whaling_result[idx];
-		game.ocean.whaling_result[idx] = undefined;
-		
-		let ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
-		let which_ship = ship.type;
-		
-		ship[whale_type + "s"] += 1;
-		
-		queue.add(function(){
-			io.sockets.emit("choose_whale", id_to_name[socket.id], which_ship, whale_type, idx);
-			console.log("queue emitting choose_whale");
-		});
+	socket.on("choose_whale", function(idx){ //idx: idx in game.ocean.whaling_result, or undefined if passing
+		if(idx != undefined){
+			//choose the whale
+			
+			let whale_type = game.ocean.whaling_result[idx];
+			game.ocean.whaling_result[idx] = undefined;
+			
+			let ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
+			let which_ship = ship.type;
+			
+			ship[whale_type + "s"] += 1;
+			
+			queue.add(function(){
+				io.sockets.emit("choose_whale", id_to_name[socket.id], which_ship, whale_type, idx);
+				console.log("queue emitting choose_whale");
+			});
+			
+		}
 		
 		//move on to the next person choosing a whale, if we're done then do next round
 		game.ocean.whale_choose_idx++;
@@ -546,6 +573,7 @@ io.on("connection", function(socket) {
 		}
 		else {
 			//done choosing whales
+			game.ocean.whale_choose_idx = undefined; //tell everyone we're not choosing whales
 			queue.add(function(){
 				io.sockets.emit("set_whale_chooser",undefined);
 				console.log("queue emitting set_whale_chooser for no one");
@@ -554,6 +582,29 @@ io.on("connection", function(socket) {
 				game.nextRound();
 			}, true);
 		}
+	});
+	
+	socket.on("return_whale", function(whale_type){ //"right_whale", "bowhead_whale", or "sperm_whale"
+		
+		let ship = game.return_queue[0];
+		ship[whale_type + "s"] -= 1;
+		players[ship.owner][whale_type + "s"] += 1;
+		
+		//move whale to returned slot
+		queue.add(function(){
+			io.sockets.emit("return_whale", ship.owner, ship.type, whale_type);
+			console.log("queue emitting return_whale");
+		});
+		
+		if(ship.right_whales == 0 && ship.bowhead_whales == 0 && ship.sperm_whales == 0){
+			queue.add(function(){
+				finishReturn(ship); //see below the socket.on list
+			}, true);
+		}
+	});
+	
+	socket.on("sell_whale", function(whale_type){ //"right_whale", "bowhead_whale", or "sperm_whale"
+		
 	});
 	
 	socket.on("done", function(){ //used for action queue, see below
@@ -568,9 +619,25 @@ io.on("connection", function(socket) {
 });
 
 
-function clearGame(){
+function finishReturn(ship){
+	//done returning
+	game.return_queue.splice(0,1);
+	ship.distance = undefined; //indicates it's not in the sea
 	
+	queue.add(function(){
+		io.sockets.emit("move_ship", ship.owner, ship.type, "player_board");
+		console.log("queue emitting move_ship to player_board");
+	});
+	queue.add(function(){
+		io.sockets.emit("finish_return");
+		console.log("queue emitting finish return");
+	});
+	queue.add(function(){
+		game.returnNextShip();
+	}, true);
 }
+
+
 
 
 
@@ -877,12 +944,12 @@ function launch_ship(name, data){
 	//Launch ship. Need to determine which ship and priority first
 	let which_ship = players[name].small_ship.prepared ? "small_ship" : "big_ship";
 	players[name][which_ship].prepared = false; //not prepared anymore
-	
+		
 	//iterate through all ships to figure out who's already at that distance
 	let max_existing_priority = 0;
 	for(let player_name in players){
 		let small = players[player_name].small_ship;
-		let big = players[player_name].small_ship;
+		let big = players[player_name].big_ship;
 		if(small.distance == data.distance){
 			max_existing_priority = Math.max(small.priority, max_existing_priority);
 		}

@@ -12,8 +12,10 @@ let board = document.getElementById("board");
 let town = document.getElementById("town");
 let ocean = document.getElementById("ocean");
 let ocean_bag = document.getElementById("ocean_bag");
-let ship_highlighter; //created in init.js
+let ship_highlighter; //created in initGameDisplay() - init.js
+let round_counter_whale; //created in initGameDisplay() - init.js
 let choose_whale_sign = document.getElementById("choose_whale_sign");
+let choose_whale_pass_button = document.getElementById("choose_whale_pass_button");
 
 let first_player_token = document.getElementById("first_player_token");
 
@@ -46,6 +48,7 @@ let dock_slots = []; //contains dock slot HTML divs, positioned correctly and wi
 //state
 let my_name;
 let game_active = false;
+let round = 1;
 let animation_in_progress = false; //click event handlers only run when this is false
 let my_turn = false;
 
@@ -79,6 +82,12 @@ let whale_draw_speed = 0.1; //coming out the bag
 let whale_medium_speed = 0.3; //moving to and from the bag to the storage on the right of the ocean
 let whale_fast_speed = 0.4; //moving from ocean storage to a player's ship
 
+let whale_counter_speed = 0.2;
+
+let first_player_token_speed = 0.3;
+
+let whale_return_speed = 0.3;
+
 //misc config
 let whaling_track_origin = {x: 169, y: 120}; //offset from top-left of ocean to the center of the left-most return spot
 let ocean_center_x = 128; //offset from left of ocean to the center of the vertical food label band in the middle
@@ -87,6 +96,10 @@ let whaling_row_offset = 48; //px offset between rows on the whaling track
 
 let whale_storage_origin = {x: 255, y: 0}; //offset from top-left of ocean to top-left corner of first whale storage spot on right of ocean
 let whale_storage_offset_y = 53;
+
+let round_counter_origin = {x: 2, y: 133};
+let round_counter_offset = 55; //px to move the round counter whale to get to the next spot, either vertically or horizontally
+
 
 //config copied from style.css
 let building_width = 100; //px

@@ -76,7 +76,8 @@ let ship_slow_animation_speed = 0.1; //pixels/ms - for small movements within th
 let ocean_bag_speed = 0.4; //pixels/ms
 let time_between_whales_back_in = 200; //ms, for when unclaimed whales go back in the bag
 let whale_draw_speed = 0.1; //coming out the bag
-let whale_fast_speed = 0.3; //moving to and from storage on the right of the ocean
+let whale_medium_speed = 0.3; //moving to and from the bag to the storage on the right of the ocean
+let whale_fast_speed = 0.4; //moving from ocean storage to a player's ship
 
 //misc config
 let whaling_track_origin = {x: 169, y: 120}; //offset from top-left of ocean to the center of the left-most return spot

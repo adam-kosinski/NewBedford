@@ -36,12 +36,25 @@ function init_game_display(players, game){
 			ordered_game_players.push(ordered_game_players.splice(0,1));
 		}
 	}
-		
+	
 	//create player boards
 	for(let p=0; p<ordered_game_players.length; p++){
 		let name = ordered_game_players[p];
 		let first_player = game.players[0] == name;
-		new PlayerBoard(name, players[name], first_player);
+		let player_board = new PlayerBoard(name, players[name], first_player);
+		
+		//display whales sitting on that player's ships
+		player_board.small_ship_right_whale_counter.set(players[name].small_ship.right_whales);
+		player_board.small_ship_bowhead_whale_counter.set(players[name].small_ship.bowhead_whales);
+		player_board.small_ship_sperm_whale_counter.set(players[name].small_ship.sperm_whales);
+		player_board.big_ship_right_whale_counter.set(players[name].big_ship.right_whales);
+		player_board.big_ship_bowhead_whale_counter.set(players[name].big_ship.bowhead_whales);
+		player_board.big_ship_sperm_whale_counter.set(players[name].big_ship.sperm_whales);
+	}
+	
+	//display whales sitting on ships
+	for(let p=0; p<game.players.length; p++){
+		let name = game.players[p];
 	}
 	
 	//create building areas - everyone has the same order for these
@@ -220,6 +233,7 @@ function init_game_display(players, game){
 		console.log(choosing_ship);
 		setWhaleChooser(choosing_ship.owner, choosing_ship.type); //whaling.js
 	}
+		
 	
 	updateGameDivSize();
 	
@@ -299,9 +313,9 @@ class PlayerBoard {
 				small_ship_right_whale: {x: 113, y: 30},
 				small_ship_bowhead_whale: {x: 142, y: 30},
 				small_ship_sperm_whale: {x: 171, y: 30},
-				right_whale: {x: 113, y: 99},
-				bowhead_whale: {x: 142, y: 99},
-				sperm_whale: {x: 171, y: 99},
+				big_ship_right_whale: {x: 113, y: 99},
+				big_ship_bowhead_whale: {x: 142, y: 99},
+				big_ships_sperm_whale: {x: 171, y: 99},
 				worker_1_storage: {x: 5, y: 135},
 				worker_2_storage: {x: 45, y: 135},
 				small_ship_storage: {x: 85, y: 138},
@@ -339,7 +353,7 @@ class PlayerBoard {
 		this.big_ship.style.left = this.location.big_ship_storage.x + "px";
 		this.big_ship.style.top = this.location.big_ship_storage.y + "px";
 		this.div.appendChild(this.big_ship);
-				
+		
 		//first player token
 		this.first_player_token_spot = document.createElement("div");
 		this.first_player_token_spot.className = "first_player_token_spot";

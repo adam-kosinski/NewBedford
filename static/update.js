@@ -451,8 +451,3 @@ function setTurn(name){ //name of player, or undefined to set it to no one's tur
 	socket.emit("done");
 }
 
-
-
-function newRound(game){ //game object from server
-	//remove all workers from the board, move the first player token
-}

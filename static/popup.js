@@ -310,7 +310,6 @@ document.addEventListener("click", function(e){
 			}
 			
 			let cost = Number(document.getElementById("cost_"+distance).textContent);
-			console.log("launch cost",cost);
 			socket.emit("place_worker", launch_type, {distance: distance, cost:cost});
 			closePopups();
 		}

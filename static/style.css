@@ -187,6 +187,7 @@ p {
 
 .whale {
 	height: 50px;
+	width: 50px;
 }
 .whale:hover {
 	z-index: 1;

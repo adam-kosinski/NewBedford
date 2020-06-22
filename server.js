@@ -147,17 +147,18 @@ class Ocean { //TODO: fix counts
 		for(let i=0; i<n_empty; i++){
 			this.bag.push("empty_sea");
 		}
-		for(i=0; i<n_right; i++){
+		for(let i=0; i<n_right; i++){
 			this.bag.push("right_whale");
 		}
-		for(i=0; i<n_bowhead; i++){
+		for(let i=0; i<n_bowhead; i++){
 			this.bag.push("bowhead_whale");
 		}
-		for(i=0; i<n_sperm; i++){
+		for(let i=0; i<n_sperm; i++){
 			this.bag.push("sperm_whale");
 		}
 		
 		this.whaling_result = []; //stuff is taken out of this.bag and placed in here when we go whaling - see this.drawWhales()
+		//when a whale is chosen, that index is set to undefined
 		
 		this.whale_choose_queue = []; //array of ships in the ocean, defined by this.initWhaleChooseQueue() below
 		this.whale_choose_idx = undefined; //index in this.whale_choose_queue representing the current choosing ship. undefined if not choosing
@@ -191,8 +192,13 @@ class Ocean { //TODO: fix counts
 		return out;
 	}
 	drawWhales(n_whales){
-		this.bag = this.bag.concat(this.whaling_result); //at this point, whaling result only includes whales not claimed last whaling phase
-		this.whaling_result = []; //clear it from last time
+		//put whales not chosen last whaling phase back in the bag
+		for(let i=0; i<this.whaling_result.length; i++){
+			if(this.whaling_result[i] != undefined){
+				this.bag.push(this.whaling_result[i]);
+			}
+		}
+		this.whaling_result = [];
 		
 		queue.add(function(){
 			io.sockets.emit("show_ocean_bag");
@@ -237,7 +243,7 @@ class Game {
 		this.round = 1;
 		
 		this.ocean = new Ocean(this.players.length);
-		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first
+		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first. Ships spliced from index 0 as they're returned
 		
 		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
@@ -281,9 +287,8 @@ class Game {
 	}
 	movementPhase(show_banner=true){ //optional arg so that this.returnAllShips() can use it w/o activating the banner
 		//tell sockets to animate the banner indicating the movement phase
-			//to move ship - change vars here, tell sockets to animate certain ships
-			//return if necessary - more complications here
-		//do ships at distance 2+ all at once
+		
+		console.log("Movement Phase Starting");
 		
 		if(show_banner){
 			queue.add(function(){
@@ -311,22 +316,22 @@ class Game {
 		//start returning ships
 		queue.add(function(){
 			//this will run when the FIRST ship finishes moving, not the last. However, since they all take the same time, it doesn't matter
-			setTimeout(game.returnNextShip, 500); //setting a timeout so all the excess "done" events we receive from the ship movement don't spill over to later queue items
+			setTimeout(function(){
+				game.returnNextShip();
+			}, 500); //setting a timeout so all the excess "done" events we receive from the ship movement don't spill over to later queue items
 		}, true);
 	}
 	returnNextShip(){
 		//called by this.movementPhase(), and called whenever a ship finishes returning, until no ships left to return.
 		console.log("return next ship, return queue:",game.return_queue);
-		//NOTE: for whatever reason, this.return_queue is undefined. Use game.return_queue instead
-		//maybe this might be a required thing for any game references from here???
 		
-		if(game.return_queue.length == 0){
+		if(this.return_queue.length == 0){
 			console.log("No more ships to return in the queue");
-			if(game.round < 12){
-				game.whalingPhase();
+			if(this.round <= 12){
+				this.whalingPhase();
 			}
 			else {
-				//TODO: call game.movementPhase w/o banner if there are still ships out
+				//TODO: call this.movementPhase w/o banner if there are still ships out
 			}
 			return;
 		}
@@ -334,6 +339,8 @@ class Game {
 		//TODO do the actual returning stuff
 	}
 	whalingPhase(){
+		console.log("Whaling Phase Starting");
+		
 		queue.add(function(){
 			io.sockets.emit("banner","Whaling Phase");
 			console.log("queue emitting whaling phase banner");
@@ -345,17 +352,64 @@ class Game {
 			this.ocean.initWhaleChooseQueue();
 		}
 		else {
-			this.nextRound();
+			queue.add(function(){
+				game.nextRound();
+			}, true);
 		}
 	}
 	nextRound(){
-		//remember to clear workers from buildings
+		console.log("next round");
+		
+		//increment round, return ships if at game end
 		this.round++;
 		if(this.round > 12){
-			//end game somehow
+			//return all ships
+			console.log("Game ending, returning all ships");
+			queue.add(function(){
+				io.sockets.emit("banner", "Returning All Ships");
+				console.log("queue emitting return all ships");
+			});
+			queue.add(function(){
+				game.movementPhase(false);
+			}, true);
+			
+			return;
 		}
+		//otherwise, game not over, do next round
 		
+		//reset state data
 		this.worker_cycle = 0;
+		let old_first_player = this.players.splice(0,1)[0];
+		this.players.push(old_first_player);
+		this.current_player = 0;
+		
+		//banner for next round
+		queue.add(function(){
+			io.sockets.emit("banner","Round " + game.round + ": Action Phase");
+			console.log("queue emitting next round banner");
+		});
+		
+		//workers back to storage
+		queue.add(function(){
+			console.log("queue emitting workers back to storage");
+			for(let i=0; i<game.players.length; i++){
+				let name = game.players[i];
+				players[name].workers_at = ["player_board","player_board"];
+				io.sockets.emit("move_worker", name, "player_board");
+			}
+		});
+		
+		//move whale round counter
+		//TODO
+		
+		//move first player token
+		//TODO
+		
+		//set first player turn
+		queue.add(function(){
+			io.sockets.emit("set_turn", game.players[0]);
+			console.log("queue emitting set turn for " + game.players[0] + " (first player this round)");
+		});
 	}
 	returnAllShips(){
 		//do movement phase a bunch - w/o movement phase banner though
@@ -466,8 +520,40 @@ io.on("connection", function(socket) {
 		buildings[build_type].placeWorker(id_to_name[socket.id], data);
 	});
 	
-	socket.on("choose_whale", function(whale){ //whale: idx in game.ocean.whaling_result
+	socket.on("choose_whale", function(idx){ //idx: idx in game.ocean.whaling_result
+		let whale_type = game.ocean.whaling_result[idx];
+		game.ocean.whaling_result[idx] = undefined;
 		
+		let ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
+		let which_ship = ship.type;
+		
+		ship[whale_type + "s"] += 1;
+		
+		queue.add(function(){
+			io.sockets.emit("choose_whale", id_to_name[socket.id], which_ship, whale_type, idx);
+			console.log("queue emitting choose_whale");
+		});
+		
+		//move on to the next person choosing a whale, if we're done then do next round
+		game.ocean.whale_choose_idx++;
+		if(game.ocean.whale_choose_idx < game.ocean.whale_choose_queue.length){
+			//next person
+			let next_ship = game.ocean.whale_choose_queue[game.ocean.whale_choose_idx];
+			queue.add(function(){
+				io.sockets.emit("set_whale_chooser", next_ship.owner, next_ship.type);
+				console.log("queue emitting set_whale_chooser for next ship");
+			});
+		}
+		else {
+			//done choosing whales
+			queue.add(function(){
+				io.sockets.emit("set_whale_chooser",undefined);
+				console.log("queue emitting set_whale_chooser for no one");
+			});
+			queue.add(function(){
+				game.nextRound();
+			}, true);
+		}
 	});
 	
 	socket.on("done", function(){ //used for action queue, see below

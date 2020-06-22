@@ -132,6 +132,10 @@ socket.on("set_whale_chooser", function(name, which_ship){
 	setWhaleChooser(name, which_ship); //whaling.js
 });
 
+socket.on("choose_whale", function(name, which_ship, whale_type, idx){
+	chooseWhale(name, which_ship, whale_type, idx); //whaling.js
+});
+
 socket.on("banner", function(message){
 	banner.textContent = message;
 	banner.style.display = "block";

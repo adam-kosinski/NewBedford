@@ -4,8 +4,6 @@ function showOceanBag(){
 	let ocean_pos = getLocation(ocean, game_div);
 	let startpoint = {x: ocean_pos.x - 320, y: ocean_pos.y - 535};
 	let endpoint = {x: startpoint.x, y: ocean_pos.y + 115};
-	console.log("startpoint",startpoint);
-	console.log("endpoint",endpoint);
 	moveAnimate(ocean_bag, animation_div, startpoint, endpoint, ocean_bag_speed, function(){
 		//making scroll_to_match a fixed element negates extra scrolling effect (already taken care of b/c child of game_div)
 		socket.emit("done");
@@ -17,8 +15,6 @@ function hideOceanBag(){
 	let ocean_pos = getLocation(ocean, game_div);
 	let startpoint = {x: ocean_pos.x - 320, y: ocean_pos.y + 115};
 	let endpoint = {x: startpoint.x, y: ocean_pos.y - 535};
-	console.log("startpoint",startpoint);
-	console.log("endpoint",endpoint);
 	moveAnimate(ocean_bag, animation_div, startpoint, endpoint, ocean_bag_speed, function(){
 		socket.emit("done");
 	});
@@ -51,7 +47,7 @@ function clearPreviousWhales(){ //"whale" can mean empty sea by the way
 			y: bag_pos.y - 75
 		};
 		changeParent(whale, animation_div);
-		moveAnimate(whale, ocean_bag, startpoint_1, endpoint_1, whale_fast_speed, function(){
+		moveAnimate(whale, ocean_bag, startpoint_1, endpoint_1, whale_medium_speed, function(){
 			let startpoint_2 = {x: 115, y: -75};
 			let endpoint_2 = {x: 115, y: 50};
 			changeParent(whale, ocean_bag);
@@ -101,7 +97,7 @@ function drawWhale(type, index){
 			};
 			
 			changeParent(whale, animation_div);
-			moveAnimate(whale, ocean, startpoint_2, endpoint_2, whale_fast_speed, function(){
+			moveAnimate(whale, ocean, startpoint_2, endpoint_2, whale_medium_speed, function(){
 				changeParent(whale, ocean);
 				whale.style.zIndex = ""; //reset it to default so the :hover styling can work
 				socket.emit("done");
@@ -166,3 +162,46 @@ function setWhaleChooser(name, which_ship){
 	
 	socket.emit("done");
 }
+
+
+function chooseWhale(name, which_ship, whale_type, idx){
+	//name: player name
+	//which_ship: "small_ship" or "big_ship"
+	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	//idx: index of the chosen whale
+	
+	//first remove the choose whale sign and the highlighting
+	choose_whale_sign.style.display = "none";
+	let whales = document.getElementsByClassName("whale");
+	for(let i=0; i<whales.length; i++){
+		whales[i].classList.remove("selectable");
+	}
+	
+	//animate the whale going to the player's ship
+	let whale = document.getElementById("whale_" + idx);
+	let startpoint = getLocation(whale, animation_div);
+	let endpoint = getLocation(which_ship + "_" + whale_type, animation_div, name);
+	endpoint.x -= 0.5*whale.width;
+	endpoint.y -= 0.5*whale.height;
+	
+	changeParent(whale, animation_div);
+	moveAnimate(whale, player_board_container, startpoint, endpoint, whale_fast_speed, function(){
+		whale.remove();
+		player_boards[name][which_ship + "_" + whale_type + "_counter"].addOne();
+		socket.emit("done");
+	});
+}
+
+
+
+//Event listner for choosing whales
+
+ocean.addEventListener("click",function(e){
+	if(! (e.target.classList.contains("whale") && e.target.classList.contains("selectable")) ){
+		return;
+	}
+	
+	let idx = Number(e.target.id.match(/\d+/)[0]);
+	console.log("choose whale", idx);
+	socket.emit("choose_whale", idx);
+});

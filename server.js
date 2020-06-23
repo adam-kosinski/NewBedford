@@ -338,13 +338,20 @@ class Game {
 		
 		//return the ship
 		let ship = this.return_queue[0];
-		queue.add(function(){
-			io.sockets.emit("start_return", ship.owner, ship.type);
-			console.log("queue emitting start_return");
-		});
 		
-		//The player will now send "return_whale" or "sell_whale" events one at a time.
-		//When they're done, the server will take the ship out of this.return_queue, and call this function again
+		if(ship.right_whales > 0 || ship.bowhead_whales > 0 || ship.sperm_whales > 0){
+			queue.add(function(){
+				io.sockets.emit("start_return", ship.owner, ship.type);
+				console.log("queue emitting start_return");
+			});
+			
+			//The player will now send "return_whale" or "sell_whale" events one at a time.
+			//When they're done, the server will take the ship out of this.return_queue, and call this function again
+		}
+		else {
+			//no whales to return, just move the ship back and reset state
+			finishReturn(ship); //function defined right below the socket.on list
+		}
 	}
 	whalingPhase(){
 		console.log("Whaling Phase Starting");

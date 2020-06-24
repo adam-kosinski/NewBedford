@@ -97,8 +97,8 @@ function getQueue(){ //debugging only
 
 //events requiring "done" emit when finished
 
-socket.on("move_worker", function(name, where){
-	moveWorker(name, where); //see update.js
+socket.on("move_worker", function(name, where, emit_done=true){
+	moveWorker(name, where, emit_done); //see update.js
 });
 
 socket.on("move_ship", function(name, which_ship, where, priority){
@@ -146,8 +146,28 @@ socket.on("start_return", function(name, which_ship){
 	startReturn(name, which_ship); //whaling.js
 });
 
-socket.on("return_whale", function(name, which_ship, whale_type){
-	returnWhale(name, which_ship, whale_type); //whaling.js
+socket.on("pay_for_whale", function(name, which_ship, whale_type, buyer){
+	payForWhale(name, which_ship, whale_type, buyer); //whaling.js
+});
+
+socket.on("pay_whale_seller", function(name, which_ship, whale_type){
+	payWhaleSeller(name, which_ship, whale_type); //whaling.js
+});
+
+socket.on("sell_whale_popup", function(seller, whale_type, buyer){
+	whale_seller = seller;
+	whale_to_sell = whale_type;
+	whale_buyer = buyer;
+	openPopup("sell_whale_popup");
+	socket.emit("done");
+});
+
+socket.on("return_whale", function(name, which_ship, whale_type, buyer){
+	returnWhale(name, which_ship, whale_type, buyer); //whaling.js
+});
+
+socket.on("trash_whale", function(name, which_ship, whale_type){
+	trashWhale(name, which_ship, whale_type); //whaling.js
 });
 
 socket.on("finish_return", function(){

@@ -222,9 +222,10 @@ function give_one(to, thing, from, emit_done=false){
 
 
 
-function moveWorker(name, where){ //note: trying to move a player to a building while a place worker animation is going on will mess up the worker slots. Annoying to fix so stays
+function moveWorker(name, where, emit_done=true){ //note: trying to move a player to a building while a place worker animation is going on will mess up the worker slots. Annoying to fix so stays
 	//name: name of player
 	//where: a building, or "player_board" to return all workers to storage
+	//emit_done: whether we should emit done when finishing
 	
 	if(where == "player_board"){
 		let worker_1 = player_boards[name].worker_1;
@@ -246,12 +247,12 @@ function moveWorker(name, where){ //note: trying to move a player to a building 
 		moveAnimate(worker_1, player_board_container, startpoint_1, endpoint_1, worker_animation_speed, function(){
 			changeParent(worker_1, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
 			updateSelectableBuildings();
-			if(dist_1 > dist_2){socket.emit("done");}
+			if(dist_1 > dist_2 && emit_done){socket.emit("done");}
 		});
 		moveAnimate(worker_2, player_board_container, startpoint_2, endpoint_2, worker_animation_speed, function(){
 			changeParent(worker_2, player_boards[name].div); //waiting till finished so things looking in the div don't think the worker was available during animation
 			updateSelectableBuildings();
-			if(dist_2 >= dist_1){socket.emit("done");}
+			if(dist_2 >= dist_1 && emit_done){socket.emit("done");}
 		});
 	}
 	else if(buildings.hasOwnProperty(where)){

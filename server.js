@@ -191,8 +191,10 @@ class Ocean { //TODO: fix counts
 		});
 		return out;
 	}
-	drawWhales(n_whales){
+	putWhalesBack(){
 		//put whales not chosen last whaling phase back in the bag
+		//function does everything except hide the ocean bag
+		
 		for(let i=0; i<this.whaling_result.length; i++){
 			if(this.whaling_result[i] != undefined){
 				this.bag.push(this.whaling_result[i]);
@@ -208,6 +210,11 @@ class Ocean { //TODO: fix counts
 			io.sockets.emit("clear_previous_whales");
 			console.log("queue emitting clear_previous_whales");
 		});
+	}
+	drawWhales(n_whales){
+		//put whales not chosen last whaling phase back in the bag
+		this.putWhalesBack();
+		
 		for(let i=0; i<n_whales; i++){
 			let whale_idx = Math.floor(Math.random()*this.bag.length);
 			let whale = this.bag.splice(whale_idx, 1)[0]; //take it out of the bag
@@ -244,6 +251,9 @@ class Game {
 		
 		this.ocean = new Ocean(this.players.length);
 		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first. Ships spliced from index 0 as they're returned
+		
+		this.selling = undefined; //undefined means not currently selling a whale. If selling, it's an object {seller: (name of seller), which_ship: , whale_type: , cost: }
+		this.current_buyer = undefined; //name of current buyer. undefined if currently not selling a whale
 		
 		this.buildings = []; //contains town and player Building objects.
 		this.unbuilt = []; //unbuilt Building objects
@@ -331,9 +341,20 @@ class Game {
 				this.whalingPhase();
 			}
 			else {
-				//TODO: call this.movementPhase w/o banner if there are still ships out
+				//call this.movementPhase w/o banner if there are still ships out
+				let ships = game.ocean.getShips();
+				if(ships.length > 0){
+					this.movementPhase(false);
+				}
+				else {
+					//tell clients game is over
+					queue.add(function(){
+						io.sockets.emit("banner", "Game Over");
+						console.log("queue emitting game over banner");
+					});
+				}
 			}
-			return;
+			return; //don't move on to returning ships, there are none
 		}
 		
 		//return the ship
@@ -361,19 +382,31 @@ class Game {
 			console.log("queue emitting whaling phase banner");
 		});
 		
+		//If ships in ocean, draw whales and don't go to next round.
+		//Otherwise, just put tiles back from last round if there are any, and go to next round
+		
 		let ocean_ships = this.ocean.getShips();
 		if(ocean_ships.length > 0){
 			this.ocean.drawWhales(ocean_ships.length + 1);
 			this.ocean.initWhaleChooseQueue();
 		}
 		else {
+			if(game.ocean.whaling_result.length > 0){
+				//put whales not chosen back
+				this.ocean.putWhalesBack();
+				queue.add(function(){
+					io.sockets.emit("hide_ocean_bag");
+					console.log("queue emitting hide_ocean_bag");
+				});
+			}
+			
 			queue.add(function(){
 				game.nextRound();
 			}, true);
 		}
 	}
 	nextRound(){
-		console.log("next round");
+		console.log("Round " + (this.round+1) + " starting");
 		
 		//increment round, return ships if at game end
 		this.round++;
@@ -410,7 +443,7 @@ class Game {
 			for(let i=0; i<game.players.length; i++){
 				let name = game.players[i];
 				players[name].workers_at = ["player_board","player_board"];
-				io.sockets.emit("move_worker", name, "player_board");
+				io.sockets.emit("move_worker", name, "player_board", i >= game.players.length-1); //only emit done for the last pair of workers - not the same as farthest pair, but it's ok
 			}
 		});
 		//tell buildings that workers left
@@ -591,11 +624,19 @@ io.on("connection", function(socket) {
 		}
 	});
 	
-	socket.on("return_whale", function(whale_type){ //"right_whale", "bowhead_whale", or "sperm_whale"
+	socket.on("return_whale", function(whale_type, cost){ //whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
 		
 		let ship = game.return_queue[0];
 		ship[whale_type + "s"] -= 1;
 		players[ship.owner][whale_type + "s"] += 1;
+		
+		players[ship.owner].money -= cost;
+		
+		//pay money for whale
+		queue.add(function(){
+			io.sockets.emit("pay_for_whale", ship.owner, ship.type, whale_type);
+			console.log("queue emitting pay_for_whale");
+		});
 		
 		//move whale to returned slot
 		queue.add(function(){
@@ -610,8 +651,114 @@ io.on("connection", function(socket) {
 		}
 	});
 	
-	socket.on("sell_whale", function(whale_type){ //"right_whale", "bowhead_whale", or "sperm_whale"
+	socket.on("sell_whale", function(whale_type, cost){ //"right_whale", "bowhead_whale", or "sperm_whale"
+		let ship = game.return_queue[0];
 		
+		//set game state
+		game.selling = {
+			seller: ship.owner,
+			which_ship: ship.type,
+			whale_type: whale_type,
+			cost: cost
+		};
+		let seller_idx = game.players.indexOf(ship.owner);
+		let buyer_idx = (seller_idx + 1) % game.players.length;
+		game.current_buyer = game.players[buyer_idx];
+		
+		//tell clients to open the popup
+		queue.add(function(){
+			io.sockets.emit("sell_whale_popup", ship.owner, whale_type, game.current_buyer);
+			console.log("queue emitting sell_whale_popup open");
+		});
+	});
+	
+	socket.on("buy_whale", function(buy){ //buy can be true or false depending on whether the player bought it or just passed
+		if(buy == true){
+			
+			let selling = game.selling; //alias
+			
+			//pay the seller
+			players[selling.seller].money += (selling.cost / 2);
+			queue.add(function(){
+				io.sockets.emit("pay_whale_seller", selling.seller, selling.which_ship, selling.whale_type);
+				console.log("queue emitting pay_whale_seller");
+			});
+			
+			//make buyer pay for the whale
+			let buyer_name = game.current_buyer;
+			players[buyer_name].money -= selling.cost;
+			queue.add(function(){
+				io.sockets.emit("pay_for_whale", selling.seller, selling.which_ship, selling.whale_type, buyer_name);
+				console.log("queue emitting buyer pay_for_whale");
+			});
+			
+			//give the whale to the buyer
+			let ship = game.return_queue[0];
+			ship[selling.whale_type + "s"] -= 1;
+			players[buyer_name][selling.whale_type + "s"] += 1;
+			queue.add(function(){
+				io.sockets.emit("return_whale", selling.seller, selling.which_ship, selling.whale_type, buyer_name);
+				console.log("queue emitting buyer return_whale");
+			});
+			
+			//clear selling state
+			game.selling = undefined;
+			game.current_buyer = undefined;
+			
+			//check if that finished the return
+			if(ship.right_whales == 0 && ship.bowhead_whales == 0 && ship.sperm_whales == 0){
+				queue.add(function(){
+					finishReturn(ship); //see below the socket.on list
+				}, true);
+			}
+		}
+		else {
+			//go onto the next player
+			let buyer_idx = game.players.indexOf(game.current_buyer);
+			buyer_idx = (buyer_idx + 1) % game.players.length;
+			game.current_buyer = game.players[buyer_idx];
+			
+			if(game.current_buyer == game.selling.seller){
+				//then we've made it around the circle and no one's bought it - pay the seller and get rid of the whale
+				
+				let selling = game.selling; //alias
+				
+				//pay the seller
+				players[selling.seller].money += (selling.cost / 2);
+				queue.add(function(){
+					io.sockets.emit("pay_whale_seller", selling.seller, selling.which_ship, selling.whale_type);
+					console.log("queue emitting pay_whale_seller");
+				});
+				
+				//trash the whale
+				let ship = game.return_queue[0];
+				ship[selling.whale_type + "s"] -= 1;
+				queue.add(function(){
+					io.sockets.emit("trash_whale", selling.seller, selling.which_ship, selling.whale_type);
+					console.log("queue emitting trash_whale");
+				});
+				
+				//clear selling state
+				game.selling = undefined;
+				game.current_buyer = undefined;
+				
+				//check if that finished the return
+				if(ship.right_whales == 0 && ship.bowhead_whales == 0 && ship.sperm_whales == 0){
+					queue.add(function(){
+						finishReturn(ship); //see below the socket.on list
+					}, true);
+				}
+			
+			
+			}
+			else {
+				//update the popup
+				queue.add(function(){
+					io.sockets.emit("sell_whale_popup", game.selling.seller, game.selling.whale_type, game.current_buyer);
+					console.log("queue emitting sell_whale_popup update");
+				});
+			}
+		}
 	});
 	
 	socket.on("done", function(){ //used for action queue, see below

@@ -43,6 +43,7 @@ html, body {
 body * {
 	position: absolute;
 	font-family: sans-serif;
+	user-select: none;
 }
 
 p {

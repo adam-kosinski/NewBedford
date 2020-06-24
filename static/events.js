@@ -144,7 +144,7 @@ document.addEventListener("click", function(e){
 		}
 		
 		
-		//rest of the player buildings w/ actions
+		//player buildings w/ actions not requiring further user input
 		else if(building == "bakery" ||
 				building == "bank" ||
 				building == "brickyard" ||

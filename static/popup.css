@@ -34,6 +34,39 @@
 }
 
 
+/* sell whale popup ------------------------*/
+
+#sell_whale_popup {
+	width: 200px;
+	height: 180px;
+}
+#sell_whale_popup * {
+	position: relative;
+}
+#sell_whale_popup img {
+	width: 50px;
+	height: 50px;
+	margin: 10px;
+}
+#sell_whale_popup button {
+	display: inline-block;
+	margin-top: 15px;
+	font-size: 24px;
+	cursor: pointer;
+}
+#buy_whale_button {
+	background-color: lightgreen;
+}
+#buy_whale_button:hover {
+	background-color: #e6fee6;
+}
+#no_buy_whale_button {
+	background-color: burlywood;
+}
+#no_buy_whale_button:hover {
+	background-color: #faf3eb;
+}
+
 /* build menu ----------------------------- */
 
 #build_menu {

@@ -220,10 +220,40 @@ function startReturn(name, which_ship, emit_done=true){
 	if(emit_done){socket.emit("done");}
 }
 
-function returnWhale(name, which_ship, whale_type){
+function payForWhale(name, which_ship, whale_type, buyer=undefined){
 	//name: name of player returning a whale
 	//which_ship: "small_ship" or "big_ship"
 	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	//buyer: name of buyer (only if the whale was bought) - the whale will go to them instead of the person returning the whale
+	
+	let ship_counter = player_boards[name][which_ship + "_" + whale_type + "_counter"];
+	let cost = whale_costs[whale_type];
+	
+	give(ship_counter, {money: cost}, buyer? buyer : name);
+}
+
+function payWhaleSeller(name, which_ship, whale_type){
+	//name: name of player returning a whale
+	//which_ship: "small_ship" or "big_ship"
+	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	
+	//this is the first function that gets called when a whale is sold, so close the sell dialog
+	whale_seller = undefined;
+	whale_to_sell = undefined;
+	whale_buyer = undefined;
+	closePopups();
+	
+	let ship_counter = player_boards[name][which_ship + "_" + whale_type + "_counter"];
+	let sold_for = whale_costs[whale_type] / 2;
+	
+	give(name, {money: sold_for}, ship_counter);
+}
+
+function returnWhale(name, which_ship, whale_type, buyer=undefined){
+	//name: name of player returning a whale
+	//which_ship: "small_ship" or "big_ship"
+	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	//buyer: name of buyer (only if the whale was bought) - the whale will go to them instead of the person returning the whale
 	
 	//decrement the ship's whale counter
 	let ship_counter = player_boards[name][which_ship + "_" + whale_type + "_counter"]
@@ -238,28 +268,80 @@ function returnWhale(name, which_ship, whale_type){
 	whale.src = "/static/images/" + whale_type + ".png";
 	player_boards[name].div.appendChild(whale);
 	
-	let startpoint = player_boards[name].location[which_ship + "_" + whale_type];
+	//copy over the width/height values from the class styling, to this element, so we can change its parent to the animation_div
+	whale.style.width = whale.width + "px";
+	whale.style.height = whale.height + "px";
+	
+	let startpoint = getLocation(which_ship + "_" + whale_type, animation_div, name);
 	startpoint.x -= 0.5*whale.width;
 	startpoint.y -= 0.5*whale.height;
 	
-	let endpoint = player_boards[name].location[whale_type];
+	let endpoint = getLocation(whale_type, animation_div, buyer? buyer : name);
 	endpoint.x -= 0.5*whale.width;
 	endpoint.y -= 0.5*whale.height;
-	
-	//animate as child of the player board
-	moveAnimate(whale, animation_div, startpoint, endpoint, whale_return_speed, function(){
+		
+	//animate
+	animation_div.appendChild(whale);
+	moveAnimate(whale, player_board_container, startpoint, endpoint, whale_return_speed, function(){
 		whale.remove();
-		player_boards[name][whale_type + "_counter"].addOne();
+		player_boards[buyer? buyer : name][whale_type + "_counter"].addOne();
 		socket.emit("done");
 	});
 }
 
+function trashWhale(name, which_ship, whale_type){ //make whale fade out if no one bought it
+	//name: name of player returning a whale
+	//which_ship: "small_ship" or "big_ship"
+	//whale_type: "right_whale", "bowhead_whale", or "sperm_whale"
+	
+	//decrement the ship's whale counter
+	let ship_counter = player_boards[name][which_ship + "_" + whale_type + "_counter"]
+	ship_counter.subtractOne();
+	if(ship_counter.textContent == "0"){
+		ship_counter.classList.remove("selectable");
+	}
+	
+	//animate a whale rising from the slot and fading out
+	
+	//create whale first
+	let whale = document.createElement("img");
+	whale.className = "whale_counter"; //take advantage of this class's already-done width and height styling
+	whale.src = "/static/images/" + whale_type + ".png";
+	player_boards[name].div.appendChild(whale);
+	
+	//copy over the width/height values from the class styling, to this element, so we can change its parent to the animation_div
+	whale.style.width = whale.width + "px";
+	whale.style.height = whale.height + "px";
+	
+	let startpoint = getLocation(which_ship + "_" + whale_type, animation_div, name);
+	startpoint.x -= 0.5*whale.width;
+	startpoint.y -= 0.5*whale.height;
+	
+	let endpoint = {
+		x: startpoint.x,
+		y: startpoint.y - 0.5*whale.height
+	};
+	
+	
+	//now animate
+	let move_speed = Math.abs(startpoint.y - endpoint.y) / (trash_whale_duration + 50); //little longer moving than fading b/c the move's finish function removes the whale
+	
+	animation_div.appendChild(whale);
+	moveAnimate(whale, player_board_container, startpoint, endpoint, move_speed, function(){
+		whale.remove();
+		socket.emit("done");
+	});
+	fadeAnimate(whale, 1, 0, trash_whale_duration, function(){});
+}
+
 function finishReturn(){
 	
-	//remove styling showing that a ship is returning
+	//remove styling showing that a ship was returning
 	//highlight was already removed in moveShip(), called by the server before this function
 	let table = document.getElementsByClassName("returning")[0];
-	table.classList.remove("returning");
+	if(table){
+		table.classList.remove("returning");
+	}
 	
 	//whale counters from the returned ship should by this point not be selectable, so don't need to do anything there
 	
@@ -303,10 +385,38 @@ document.addEventListener("click", function(e){
 	
 	if(e.shiftKey){
 		//TODO sell the whale
+		console.log("sell", whale_type);
+		
+		popup_background.style.display = "block"; //open immediately to prevent additional return/sell clicks
+		socket.emit("sell_whale", whale_type, whale_costs[whale_type]);
 	}
 	else {
 		//return the whale
+		
+		let cost = whale_costs[whale_type];
+		let n_money = Number(player_boards[my_name].money_counter.textContent);
+		
+		if(cost > n_money){
+			alert("You don't have enough money to return this whale");
+			return;
+		}
+		
 		console.log("return",whale_type);
-		socket.emit("return_whale", whale_type);
+		socket.emit("return_whale", whale_type, cost);
+	}
+});
+
+
+
+//Event listeners for buying a whale
+
+document.getElementById("buy_whale_buttons").addEventListener("click", function(e){
+	if(e.target.id == "buy_whale_button"){
+		console.log("buy");
+		socket.emit("buy_whale", true);
+	}
+	else if(e.target.id == "no_buy_whale_button"){
+		console.log("pass");
+		socket.emit("buy_whale", false);
 	}
 });

@@ -13,6 +13,13 @@ function openPopup(id){ //id of popup's HTML element, or for stores: name of sto
 	closePopups(); //only have one open at a time
 	
 	//popup specific stuff
+	if(id == "sell_whale_popup"){
+		document.getElementById("whale_seller_name").textContent = whale_seller==my_name? "You are selling:" : whale_seller + " is selling:";
+		document.getElementById("whale_to_sell_display").src = "/static/images/" + whale_to_sell + ".png";
+		document.getElementById("whale_buyer_name").textContent = whale_buyer==my_name? "you" : whale_buyer;
+		
+		document.getElementById("buy_whale_buttons").style.display = whale_buyer==my_name? "block" : "none";
+	}
 	if(id == "build_menu"){
 		let container = document.getElementById("build_menu_buildings");
 		if(build_menu_select_mode){

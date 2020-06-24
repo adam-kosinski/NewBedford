@@ -21,6 +21,7 @@ let first_player_token = document.getElementById("first_player_token");
 
 let popup_background = document.getElementById("popup_background");
 
+
 //popup stuff
 let food_to_sell = document.getElementById("food_to_sell");
 let wood_to_sell = document.getElementById("wood_to_sell");
@@ -36,6 +37,11 @@ let second_discount = undefined;
 let build_button = document.getElementById("build_button");
 
 let launch_type = "city_pier"; //or "dry_dock" or "wharf"
+
+let whale_seller = undefined;
+let whale_to_sell = undefined;
+let whale_buyer = undefined;
+
 
 //bulk DOM info (references, locations, data)
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)
@@ -86,7 +92,9 @@ let whale_counter_speed = 0.2;
 
 let first_player_token_speed = 0.3;
 
-let whale_return_speed = 0.3;
+let whale_return_speed = 0.4;
+
+let trash_whale_duration = 1000; //ms
 
 //misc config
 let whaling_track_origin = {x: 169, y: 120}; //offset from top-left of ocean to the center of the left-most return spot
@@ -100,6 +108,11 @@ let whale_storage_offset_y = 53;
 let round_counter_origin = {x: 2, y: 133};
 let round_counter_offset = 55; //px to move the round counter whale to get to the next spot, either vertically or horizontally
 
+let whale_costs = {
+	right_whale: 2,
+	bowhead_whale: 4,
+	sperm_whale: 8
+};
 
 //config copied from style.css
 let building_width = 100; //px

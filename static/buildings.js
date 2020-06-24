@@ -183,12 +183,13 @@ class BuildingArea {
 		let town_y_offset = town_bounding_box.y_min - new_town_box.y_min;
 		let ocean_x_offset = new_town_box.x_max - town_bounding_box.x_max;
 		
-		//we need to change the z-index of animation div temporarily so the town isn't on top of the player boards
+		//if animating we'll need to change the z-index of animation div temporarily so the town isn't on top of the player boards
+		//store usual z-index here for use later if needed
 		let z = getComputedStyle(animation_div).zIndex;
-		animation_div.style.zIndex = 1;
 		
 		if(Math.abs(board_x_offset) > 0.5){
 			if(animate){
+				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(board, animation_div);
 				let endpoint = {x: startpoint.x + board_x_offset, y: startpoint.y};
 				changeParent(board, animation_div);
@@ -207,6 +208,7 @@ class BuildingArea {
 		}
 		if(Math.abs(town_y_offset) > 0.5){
 			if(animate){
+				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(town, animation_div);
 				let endpoint = {x: startpoint.x, y: startpoint.y + town_y_offset};
 				changeParent(town, animation_div);
@@ -225,6 +227,7 @@ class BuildingArea {
 		}
 		if(Math.abs(ocean_x_offset) > 0.5){
 			if(animate){
+				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(ocean, animation_div);
 				let endpoint = {x: startpoint.x + ocean_x_offset, y: startpoint.y};
 				changeParent(ocean, animation_div);
@@ -241,12 +244,6 @@ class BuildingArea {
 				updateGameDivSize();
 			}
 		}
-		
-		//restore animation div's z index
-		if(!animate){
-			animation_div.style.zIndex = z;
-		}
-		//if animate is true, this is done in the finish function
 	}
 }
 

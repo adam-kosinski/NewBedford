@@ -254,6 +254,14 @@ function init_game_display(players, game){
 		startReturn(ship.owner, ship.type, false);
 	}
 	
+	//show sell_whale_popup if a whale is currently being sold
+	if(game.selling){ //game.selling is either undefined or an object
+		whale_seller = game.selling.seller;
+		whale_to_sell = game.selling.whale_type;
+		whale_buyer = game.current_buyer;
+		openPopup("sell_whale_popup");
+	}
+	
 	
 	
 	town_bounding_box = getTownBoundingBox();
@@ -311,12 +319,12 @@ class PlayerBoard {
 				right_whale: {x: 28, y: 164},
 				bowhead_whale: {x: 72, y: 164},
 				sperm_whale: {x: 116, y: 164},
-				small_ship_right_whale: {x: 182, y: 50},
-				small_ship_bowhead_whale: {x: 228, y: 50},
-				small_ship_sperm_whale: {x: 274, y: 50},
-				big_ship_right_whale: {x: 182, y: 160},
-				big_ship_bowhead_whale: {x: 228, y: 160},
-				big_ship_sperm_whale: {x: 274, y: 160},
+				small_ship_right_whale: {x: 184, y: 50},
+				small_ship_bowhead_whale: {x: 232, y: 50},
+				small_ship_sperm_whale: {x: 279, y: 50},
+				big_ship_right_whale: {x: 184, y: 160},
+				big_ship_bowhead_whale: {x: 232, y: 160},
+				big_ship_sperm_whale: {x: 279, y: 160},
 				worker_1_storage: {x: 5, y: 210},
 				worker_2_storage: {x: 45, y: 210},
 				small_ship_storage: {x: 85, y: 213},
@@ -332,12 +340,12 @@ class PlayerBoard {
 				right_whale: {x: 17, y: 101},
 				bowhead_whale: {x: 45, y: 101},
 				sperm_whale: {x: 72, y: 101},
-				small_ship_right_whale: {x: 113, y: 30},
-				small_ship_bowhead_whale: {x: 142, y: 30},
-				small_ship_sperm_whale: {x: 171, y: 30},
-				big_ship_right_whale: {x: 113, y: 99},
-				big_ship_bowhead_whale: {x: 142, y: 99},
-				big_ships_sperm_whale: {x: 171, y: 99},
+				small_ship_right_whale: {x: 114, y: 30},
+				small_ship_bowhead_whale: {x: 145, y: 30},
+				small_ship_sperm_whale: {x: 174, y: 30},
+				big_ship_right_whale: {x: 114, y: 99},
+				big_ship_bowhead_whale: {x: 145, y: 99},
+				big_ship_sperm_whale: {x: 174, y: 99},
 				worker_1_storage: {x: 5, y: 135},
 				worker_2_storage: {x: 45, y: 135},
 				small_ship_storage: {x: 85, y: 138},

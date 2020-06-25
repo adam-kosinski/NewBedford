@@ -21,6 +21,8 @@ function moveAnimate(object, scroll_to_match, startpoint, endpoint, speed, finis
 	//animate
 	let t_start = performance.now();
 	let step = function(t_now){
+		if(!game_active){return;} //to make game clearing work
+		
 		let fraction = (t_now - t_start) / duration; //all in ms
 		
 		let s_box = scroll_to_match.getBoundingClientRect();
@@ -61,6 +63,8 @@ function fadeAnimate(object, start_opacity, end_opacity, duration, finish_functi
 	
 	let t_start = performance.now();
 	let step = function(t_now){
+		if(!game_active){return;} //to make game clearing work
+		
 		let fraction = (t_now - t_start) / duration; //all in ms
 		
 		if(fraction >= 1){

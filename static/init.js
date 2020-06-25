@@ -8,6 +8,11 @@ function init_game_display(players, game){
 	home_screen.style.display = "none";
 	game_div.style.display = "block";
 	
+	//Don't allow a non-player to click the clear game button. If weird things happen, we can always do it through the console.
+	if(!game.players.includes(my_name)){
+		document.getElementById("clear_game_button").style.display = "none";
+	}
+	
 	
 	//add town and ocean images
 	let town_image = document.createElement("img");
@@ -156,7 +161,7 @@ function init_game_display(players, game){
 		let building = game.buildings[b];
 		if(building.owner){
 			building_areas[building.owner].build(building.type, false); //false - don't animate
-			document.getElementById(building.type + "-back").remove(); //remove from build menu
+			document.getElementById(building.type + "-back").style.display = "none"; //remove from build menu
 		}
 	}
 	

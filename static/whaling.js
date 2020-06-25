@@ -413,6 +413,15 @@ document.addEventListener("click", function(e){
 document.getElementById("buy_whale_buttons").addEventListener("click", function(e){
 	if(e.target.id == "buy_whale_button"){
 		console.log("buy");
+		
+		let cost = whale_costs[whale_to_sell];
+		let n_money = Number(player_boards[my_name].money_counter.textContent);
+		
+		if(cost > n_money){
+			alert("You don't have enough money to buy this whale");
+			return;
+		}
+		
 		socket.emit("buy_whale", true);
 	}
 	else if(e.target.id == "no_buy_whale_button"){

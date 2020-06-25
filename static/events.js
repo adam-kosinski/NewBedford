@@ -11,6 +11,17 @@ start_button.addEventListener("click", function(){
 	}
 });
 
+
+document.getElementById("clear_game_button").addEventListener("click", function(){
+	if(confirm("Are you sure you want to clear the current game? All stored progress will be lost.")){
+		if(confirm("Are you super definitely 100% sure?")){
+			console.log("clear game");
+			socket.emit("clear_game");
+		}
+	}
+});
+
+
 document.addEventListener("click", function(e){	
 	
 	console.log(e.pageX, e.pageY);
@@ -95,8 +106,28 @@ document.addEventListener("click", function(e){
 			launch_type = "city_pier";
 			openPopup("launch_popup");
 		}
-		
-		
+		else if(building == "cooperage"){
+			//see if there are any whales on a ship, if not, alert the player
+			let ship_types = ["small_ship", "big_ship"];
+			let whale_types = ["right_whale", "bowhead_whale", "sperm_whale"];
+			
+			for(let i=0; i<ship_types.length; i++){
+				for(let j=0; j<whale_types.length; j++){
+					let ship_type = ship_types[i];
+					let whale_type = whale_types[j];
+					
+					console.log(ship_type, whale_type);
+					
+					let counter = player_boards[my_name][ship_type + "_" + whale_type + "_counter"];
+					if(counter.textContent != "0"){
+						socket.emit("place_worker", "cooperage");
+						return;
+					}
+				}
+			}
+			
+			alert("You don't have any whales on one of your ships, going here will give you nothing.");
+		}
 		//player buildings requiring further input 
 		else if(building == "courthouse"){
 			build_type = "courthouse";
@@ -127,6 +158,9 @@ document.addEventListener("click", function(e){
 		else if(building == "market"){
 			openPopup("market_popup");
 		}
+		else if(building == "tavern"){
+			//TODO - alert if there are no ocean tiles
+		}
 		else if(building == "tryworks"){
 			
 		}
@@ -144,18 +178,18 @@ document.addEventListener("click", function(e){
 		}
 		
 		
-		//player buildings w/ actions not requiring further user input
+		//player buildings not requiring checks or further user input
 		else if(building == "bakery" ||
 				building == "bank" ||
 				building == "brickyard" ||
 				building == "chandlery" ||
-				building == "cooperage" ||
 				building == "inn" ||
 				building == "post_office" ||
-				building == "schoolhouse" ||
-				building == "tavern")
+				building == "schoolhouse")
 		{
-			
+			socket.emit("place_worker", building);
 		}
+		
+		//no event handlers for buildings w/o actions (e.g. mansion)
 	}
 });

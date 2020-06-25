@@ -47,6 +47,8 @@ socket.emit("get_state", function(players, game){
 });
 
 
+
+
 //socket event handlers
 
 socket.on("player_connection", function(players){
@@ -83,6 +85,9 @@ socket.on("start_game", function(players, game){
 });
 
 
+
+//Debugging functions for getting stuff from the server
+
 function getState(){ //debugging only
 	socket.emit("get_state",function(players,game){
 		console.log(players,game);
@@ -93,6 +98,8 @@ function getQueue(){ //debugging only
 		console.log(queue, busy_clients);
 	});
 }
+
+
 
 
 //events requiring "done" emit when finished
@@ -110,7 +117,7 @@ socket.on("give", function(name, data, from){
 });
 
 socket.on("build", function(name, building){
-	document.getElementById(building + "-back").remove();
+	document.getElementById(building + "-back").style.display = "none";
 	building_areas[name].build(building);
 });
 
@@ -194,4 +201,80 @@ socket.on("banner", function(message){
 			});
 		}, 1000);
 	});
+});
+
+
+
+//clear game
+socket.on("clear_game", function(){
+	//clear data
+	opened_store = undefined;
+	build_menu_select_mode = false;
+	build_type = "town_hall";
+	building_to_build = undefined;
+	first_discount = undefined;
+	second_discount = undefined;
+	launch_type = "city_pier";
+	whale_seller = undefined;
+	whale_to_sell = undefined;
+	whale_buyer = undefined;
+	
+	player_boards = {};
+	buildings = {};
+	building_areas = {};
+	dock_slots = [];
+	
+	game_active = false;
+	round = 1;
+	animation_in_progress = false; //click event handlers only run when this is false
+	my_turn = false;
+
+	town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet
+		x_min: 376,
+		x_max: 766,
+		y_min: 90,
+		y_max: 480
+	};
+
+	
+	//reset GUI
+	closePopups();	
+	
+	game_div.appendChild(board); //in case any of these were being animated in animation_div at the time
+	board.appendChild(town);
+	board.appendChild(ocean);
+	
+	town.innerHTML = "";
+	ocean.innerHTML = "";
+	player_board_container.innerHTML = "";
+	animation_div.innerHTML = "";
+	
+	let floating_whales = ocean_bag.getElementsByClassName("whale");
+	for(let i=0; i<floating_whales.length; i++){
+		floating_whales[i].remove();
+	}
+	
+	let building_backs = document.getElementById("build_menu_buildings").getElementsByTagName("IMG");
+	for(let i=0; i<building_backs.length; i++){
+		building_backs[i].style.display = "block";
+	}
+	
+	//reset to original style
+	animation_div.style.zIndex = "";
+	town.style.left = "";
+	town.style.top = "";
+	ocean.style.left = "";
+	ocean.style.top = "";
+	board.style.left = "";
+	board.style.top = "";
+	ocean_bag.style.left = "";
+	ocean_bag.style.top = "";
+	
+	banner.style.display = "none";
+	choose_whale_sign.style.display = "none";
+	choose_whale_pass_button.style.display = "none";
+	
+	//show home screen
+	game_div.style.display = "none";
+	home_screen.style.display = "block";
 });

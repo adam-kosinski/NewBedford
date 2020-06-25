@@ -171,6 +171,7 @@ class BuildingArea {
 		if(animate){
 			building.div.style.opacity = 0;
 			fadeAnimate(building.div, 0, 1, building_fade_in_time, function(){
+				updateGameDivSize();
 				socket.emit("done");
 			});
 		}

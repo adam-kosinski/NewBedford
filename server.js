@@ -11,7 +11,11 @@ Remember when returning ships to remove their z-index property so the dock slots
 
 Fix it so that clicking on any of a buildings children will activate the building
 
+updateGameDivSize() isn't working when penguin builds a building (for vertical expansion), even if run from the console after the fact. Works upon reload though
+
 FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
+
+BUG - DOUBLE CLICKING ON WHALE DURING RETURN CAUSES MORE RETURNS THAN SHOULD HAPPEN
 */
 
 
@@ -761,6 +765,27 @@ io.on("connection", function(socket) {
 		}
 	});
 	
+	socket.on("clear_game", function(){
+		
+		game = undefined;
+		queue.splice(0); //don't set it to a new array b/c the old one had the 'add' method attached to it
+		busy_clients = [];
+		
+		//reset player data
+		let reset_players = {};
+		for(let name in players){
+			if(players[name].connected){
+				reset_players[name] = new Player(name);
+			}
+		}
+		players = reset_players;
+		
+		buildings = {};
+		
+		
+		io.sockets.emit("clear_game");
+	});
+	
 	socket.on("done", function(){ //used for action queue, see below
 		let name = id_to_name[socket.id];
 		let index = busy_clients.indexOf(name);
@@ -986,15 +1011,55 @@ function initBuildings(){
 
 
 	//player buildings
-	new Building("bakery", false, function(name){});
+	new Building("bakery", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("give", name, {food: 4}, "bakery");
+			players[name].food += 4;
+			console.log("queue emitting bakery give");
+		});
+	});
 
-	new Building("bank", false, function(name){});
+	new Building("bank", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("give", name, {money: 5}, "bank");
+			players[name].money += 5;
+			console.log("queue emitting bank give");
+		});
+	});
 
-	new Building("brickyard", false, function(name){});
+	new Building("brickyard", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("give", name, {brick: 3}, "brickyard");
+			players[name].brick += 3;
+			console.log("queue emitting brickyard give");
+		});
+	});
 
-	new Building("chandlery", false, function(name){});
+	new Building("chandlery", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("give", name, {food: 1, wood: 1, brick: 1, money: 1}, "chandlery");
+			players[name].food += 1;
+			players[name].wood += 1;
+			players[name].brick += 1;
+			players[name].money += 1;
+			console.log("queue emitting chandlery give");
+		});
+	});
 
-	new Building("cooperage", false, function(name){});
+	new Building("cooperage", false, function(name){
+		let small = players[name].small_ship;
+		let big = players[name].big_ship;
+		let n_small_whales = small.right_whales + small.bowhead_whales + small.sperm_whales;
+		let n_big_whales = big.right_whales + big.bowhead_whales + big.sperm_whales;
+		
+		let money_to_give = Math.max(n_small_whales, n_big_whales);
+		
+		queue.add(function(){
+			io.sockets.emit("give", name, {money: money_to_give}, "cooperage");
+			players[name].money += money_to_give;
+			console.log("queue emitting cooperage give");
+		});
+	});
 
 	new Building("counting_house", false, function(name){});
 

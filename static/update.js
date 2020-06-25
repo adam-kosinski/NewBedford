@@ -501,3 +501,51 @@ function moveFirstPlayerToken(name){
 		socket.emit("done");
 	});
 }
+
+
+
+function sellEmptySea(n){
+	//n: number of empty sea tokens to sell
+	
+	//Note: This function only moves tokens to the tavern then removes them. Money stuff is taken care of by give()
+	
+	if(n > 2){
+		throw new Error("May only sell up to 2 empty sea tokens, " + n + " requested");
+	}
+	
+	let empty_sea_tokens = ocean.getElementsByClassName("empty_sea");
+	empty_sea_tokens = Object.assign([], empty_sea_tokens); //so the list won't change as they're removed
+	
+	let idx = 0; //current index in empty_sea_tokens
+	
+	//define function to be called repeatedly with a delay between
+	let tokenToTavern = function(){
+		let empty_sea = empty_sea_tokens[idx];
+		idx++;
+		
+		let startpoint = getLocation(empty_sea, animation_div);
+		let endpoint = getLocation("tavern", animation_div);
+		endpoint.x -= 0.5*empty_sea.width;
+		endpoint.y -= 0.5*empty_sea.height;
+		
+		let last_one = (idx >= n);
+		
+		//animate
+		changeParent(empty_sea, animation_div);
+		moveAnimate(empty_sea, town, startpoint, endpoint, empty_sea_speed, function(){
+			empty_sea.remove();
+			if(last_one){
+				socket.emit("done");
+			}
+		});
+		
+		//check if we need to do another one
+		if(!last_one && n > 1){
+			setTimeout(tokenToTavern, time_between_sea_sells);
+		}
+	}
+	
+	if(n > 0){
+		tokenToTavern();
+	}
+}

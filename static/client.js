@@ -121,6 +121,10 @@ socket.on("build", function(name, building){
 	building_areas[name].build(building);
 });
 
+socket.on("sell_empty_sea", function(n){
+	sellEmptySea(n); //update.js
+});
+
 socket.on("show_ocean_bag", function(){
 	showOceanBag(); //whaling.js
 });
@@ -228,6 +232,7 @@ socket.on("clear_game", function(){
 	round = 1;
 	animation_in_progress = false; //click event handlers only run when this is false
 	my_turn = false;
+	returning_whale = false;
 
 	town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet
 		x_min: 376,

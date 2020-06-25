@@ -204,7 +204,7 @@ function startReturn(name, which_ship, emit_done=true){
 	highlightShip(name, which_ship);
 	player_boards[name][which_ship + "_whale_counter_table"].classList.add("returning");
 	
-	if(name == my_name){
+	if(name == my_name){		
 		//make whales selectable
 		let right_whales = player_boards[name][which_ship + "_right_whale_counter"];
 		let bowhead_whales = player_boards[name][which_ship + "_bowhead_whale_counter"];
@@ -285,6 +285,7 @@ function returnWhale(name, which_ship, whale_type, buyer=undefined){
 	moveAnimate(whale, player_board_container, startpoint, endpoint, whale_return_speed, function(){
 		whale.remove();
 		player_boards[buyer? buyer : name][whale_type + "_counter"].addOne();
+		returning_whale = false;
 		socket.emit("done");
 	});
 }
@@ -380,6 +381,7 @@ document.addEventListener("click", function(e){
 	if( ! (e.target.classList.contains("whale_counter") && e.target.classList.contains("selectable")) ){
 		return;
 	}
+	if(returning_whale){return;} //wait for the last one to finish
 	
 	let whale_type = e.target.className.match(/right_whale|bowhead_whale|sperm_whale/)[0];
 	
@@ -392,6 +394,7 @@ document.addEventListener("click", function(e){
 	}
 	else {
 		//return the whale
+		returning_whale = true; //prevent problems with rapid clicking
 		
 		let cost = whale_costs[whale_type];
 		let n_money = Number(player_boards[my_name].money_counter.textContent);

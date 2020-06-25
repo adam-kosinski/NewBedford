@@ -57,6 +57,7 @@ let game_active = false;
 let round = 1;
 let animation_in_progress = false; //click event handlers only run when this is false
 let my_turn = false;
+let returning_whale = false; //used to prevent multiple-clicks for returning a whale
 
 let town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet
 	x_min: 376,
@@ -95,6 +96,9 @@ let first_player_token_speed = 0.3;
 let whale_return_speed = 0.4;
 
 let trash_whale_duration = 1000; //ms
+
+let empty_sea_speed = 0.4; //for selling empty sea to the tavern
+let time_between_sea_sells = 200; //ms
 
 //misc config
 let whaling_track_origin = {x: 169, y: 120}; //offset from top-left of ocean to the center of the left-most return spot

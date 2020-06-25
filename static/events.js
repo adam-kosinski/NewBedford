@@ -159,7 +159,14 @@ document.addEventListener("click", function(e){
 			openPopup("market_popup");
 		}
 		else if(building == "tavern"){
-			//TODO - alert if there are no ocean tiles
+			//only emit to server if there are ocean tiles, if none alert the user
+			let empty_sea_tokens = ocean.getElementsByClassName("empty_sea");
+			if(empty_sea_tokens.length > 0){
+				socket.emit("place_worker", "tavern");
+			}
+			else {
+				alert("There are no empty sea tokens available to sell.");
+			}
 		}
 		else if(building == "tryworks"){
 			

@@ -24,7 +24,7 @@
 	#animation_div - 14
 		.animated_resource - 15
 	
-	#ocean_bag - 4
+	#ocean_bag - 6
 		#ocean_bag_image - 5
 		whales drawn - 1
 	
@@ -507,7 +507,7 @@ p {
 /* ocean bag -------------------------------*/
 #ocean_bag {
 	width: 300px;
-	z-index: 4;
+	z-index: 6;
 	left: 500px;
 	top: -450px;
 	margin: auto;

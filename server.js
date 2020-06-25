@@ -6,16 +6,18 @@ Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
 For 2 player game, don't include 3-4 player buildings
+At one point, the 'pass' button on the choose whale sign disappeared for penguin. What?? Came back with page reload.
 
 Remember when returning ships to remove their z-index property so the dock slots will work properly. ship.style.zIndex = ""; (default)
 
 Fix it so that clicking on any of a buildings children will activate the building
 
+Bug with dry dock
+
 updateGameDivSize() isn't working when penguin builds a building (for vertical expansion), even if run from the console after the fact. Works upon reload though
 
 FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
 
-BUG - DOUBLE CLICKING ON WHALE DURING RETURN CAUSES MORE RETURNS THAN SHOULD HAPPEN
 */
 
 
@@ -1004,8 +1006,11 @@ function initBuildings(){
 			players[name].food -= data.cost;
 			console.log("queue emitting city_pier launch");
 		});
+		
+		let which_ship = players[name].small_ship.prepared ? "small_ship" : "big_ship";
+		
 		queue.add(function(){
-			launch_ship(name, data);
+			launchShip(name, which_ship, data);
 		});
 	});
 
@@ -1086,13 +1091,19 @@ function initBuildings(){
 			players[name].food -= data.cost;
 			console.log("queue emitting dry_dock launch");
 		});
+		let which_ship;
 		queue.add(function(){
-			let which_ship = players[name].small_ship.distance == undefined ? "small_ship" : "big_ship";
+			if(players[name].small_ship.distance == undefined && players[name].small_ship.prepared == false){
+				which_ship = "small_ship";
+			}
+			else {
+				which_ship = "big_ship";
+			}
 			players[name][which_ship].prepared = true;
 			io.sockets.emit("move_ship", name, which_ship, "dock");
 		});
 		queue.add(function(){
-			launch_ship(name, data);
+			launchShip(name, which_ship, data);
 		});
 	});
 
@@ -1136,11 +1147,40 @@ function initBuildings(){
 
 	new Building("post_office", false, function(name){});
 
-	new Building("schoolhouse", false, function(name){});
+	new Building("schoolhouse", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("give", name, {food: 2, wood: 2}, "schoolhouse");
+			players[name].food += 2;
+			players[name].wood += 2;
+			console.log("queue emitting schoolhouse give");
+		});
+	});
 
 	new Building("seamens_bethel", false, function(name){});
 
-	new Building("tavern", false, function(name){});
+	new Building("tavern", false, function(name){
+		
+		//figure out how many empty sea we can sell (0, 1, or 2), and remove them from the whaling_result
+		let n_to_sell = 0;
+		for(let i=0; i<game.ocean.whaling_result.length; i++){
+			if(game.ocean.whaling_result[i] == "empty_sea" && n_to_sell < 2){
+				n_to_sell++;
+				game.ocean.whaling_result[i] = undefined;
+			}
+		}
+				
+		//tell clients to do stuff
+		queue.add(function(){
+			io.sockets.emit("sell_empty_sea", n_to_sell);
+			console.log("queue emitting sell_empty_sea");
+		});
+		queue.add(function(){
+			io.sockets.emit("give", name, {money: 2 + 2*n_to_sell}, "tavern");
+			players[name].money += (2 + 2*n_to_sell);
+			console.log("queue emitting tavern give");
+		});
+		
+	});
 
 	new Building("tryworks", false, function(name){});
 
@@ -1150,8 +1190,11 @@ function initBuildings(){
 			players[name].food -= data.cost;
 			console.log("queue emitting wharf launch");
 		});
+		
+		let which_ship = players[name].small_ship.prepared ? "small_ship" : "big_ship";
+		
 		queue.add(function(){
-			launch_ship(name, data);
+			launchShip(name, which_ship, data);
 		});
 	});
 }
@@ -1159,11 +1202,10 @@ function initBuildings(){
 
 
 //function to launch a ship, used by the city_pier, dry_dock, and wharf building actions
-function launch_ship(name, data){
+function launchShip(name, which_ship, data){
 	//Launch ship. Need to determine which ship and priority first
-	let which_ship = players[name].small_ship.prepared ? "small_ship" : "big_ship";
 	players[name][which_ship].prepared = false; //not prepared anymore
-		
+	
 	//iterate through all ships to figure out who's already at that distance
 	let max_existing_priority = 0;
 	for(let player_name in players){

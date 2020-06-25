@@ -318,3 +318,32 @@ img#building_to_build_display {
 	display: inline-block;
 	transform: translate(0, -5px);
 }
+
+
+/* tryworks popup -----------------------------------------*/
+#tryworks_popup {
+	width: 225px;
+	height: 145px;
+}
+#tryworks_popup div:not(:first-child), #tryworks_popup p {
+	position: relative;
+}
+#tryworks_popup p {
+	font-size: 18px;
+}
+.tryworks_button {
+	width: 150px;
+	left: 0;
+	right: 0;
+	margin: auto;
+	
+	padding: 2px;
+	background-color: skyblue;
+	border: 2px solid royalblue;
+	border-radius: 10px;
+	margin-top: 15px;
+}
+.tryworks_button:hover {
+	cursor: pointer;
+	background-color: aliceblue;
+}

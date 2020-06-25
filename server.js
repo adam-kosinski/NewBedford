@@ -6,13 +6,8 @@ Make player boards the correct color (the ships on there are colored !!)
 Currently easy to mistype your name when reentering, make that better - low priority
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
 For 2 player game, don't include 3-4 player buildings
-At one point, the 'pass' button on the choose whale sign disappeared for penguin. What?? Came back with page reload.
-
-Remember when returning ships to remove their z-index property so the dock slots will work properly. ship.style.zIndex = ""; (default)
 
 Fix it so that clicking on any of a buildings children will activate the building
-
-Bug with dry dock
 
 updateGameDivSize() isn't working when penguin builds a building (for vertical expansion), even if run from the console after the fact. Works upon reload though
 
@@ -397,14 +392,20 @@ class Game {
 			this.ocean.initWhaleChooseQueue();
 		}
 		else {
-			if(game.ocean.whaling_result.length > 0){
-				//put whales not chosen back
-				this.ocean.putWhalesBack();
-				queue.add(function(){
-					io.sockets.emit("hide_ocean_bag");
-					console.log("queue emitting hide_ocean_bag");
-				});
+			//check if there's a non-undefined thing left in whaling result
+			for(let i=0; i<game.ocean.whaling_result.length; i++){
+				if(game.ocean.whaling_result[i] != undefined){
+					//put whales not chosen back
+					this.ocean.putWhalesBack();
+					queue.add(function(){
+						io.sockets.emit("hide_ocean_bag");
+						console.log("queue emitting hide_ocean_bag");
+					});
+					break;
+				}
 			}
+			
+			this.ocean.whaling_result = []; //if ocean.putWhalesBack() wasn't called, this would still be full of undefineds
 			
 			queue.add(function(){
 				game.nextRound();
@@ -1182,7 +1183,22 @@ function initBuildings(){
 		
 	});
 
-	new Building("tryworks", false, function(name){});
+	new Building("tryworks", false, function(name, data){
+		
+		let ship = players[name][data.which_ship];
+		let n_to_return = Math.min(ship.right_whales, 3);
+		
+		ship.right_whales -= n_to_return;
+		players[ship.owner].right_whales += n_to_return;
+		
+		//move whales to returned slot
+		for(let i=0; i<n_to_return; i++){
+			queue.add(function(){
+				io.sockets.emit("return_whale", ship.owner, ship.type, "right_whale");
+				console.log("queue emitting return_whale (tryworks)");
+			});
+		}
+	});
 
 	new Building("wharf", false, function(name, data){
 		queue.add(function(){

@@ -11,7 +11,7 @@ function closePopups(){
 
 function openPopup(id){ //id of popup's HTML element, or for stores: name of store + "_popup"
 	closePopups(); //only have one open at a time
-	
+		
 	//popup specific stuff
 	if(id == "sell_whale_popup"){
 		document.getElementById("whale_seller_name").textContent = whale_seller==my_name? "You are selling:" : whale_seller + " is selling:";
@@ -91,6 +91,13 @@ function openPopup(id){ //id of popup's HTML element, or for stores: name of sto
 				tr.classList.remove("disabled");
 			}
 		}
+	}
+	if(id == "tryworks_popup"){
+		//only let the player return right whales off a ship w/ right whales
+		let n_on_small = Number(player_boards[my_name].small_ship_right_whale_counter.textContent);
+		let n_on_big = Number(player_boards[my_name].big_ship_right_whale_counter.textContent);
+		document.getElementById("tryworks_small_ship_button").style.display = n_on_small>0? "block" : "none";
+		document.getElementById("tryworks_big_ship_button").style.display = n_on_big>0? "block" : "none";
 	}
 	
 	//open
@@ -323,6 +330,18 @@ document.addEventListener("click", function(e){
 			socket.emit("place_worker", launch_type, {distance: distance, cost:cost});
 			closePopups();
 		}
+	}
+	
+	
+	
+	//tryworks popup
+	if(e.target.id == "tryworks_small_ship_button"){
+		closePopups();
+		socket.emit("place_worker", "tryworks", {which_ship: "small_ship"});
+	}
+	if(e.target.id == "tryworks_big_ship_button"){
+		closePopups();
+		socket.emit("place_worker", "tryworks", {which_ship: "big_ship"});
 	}
 	
 });

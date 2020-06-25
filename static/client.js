@@ -277,7 +277,6 @@ socket.on("clear_game", function(){
 	
 	banner.style.display = "none";
 	choose_whale_sign.style.display = "none";
-	choose_whale_pass_button.style.display = "none";
 	
 	//show home screen
 	game_div.style.display = "none";

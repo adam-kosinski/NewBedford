@@ -315,6 +315,7 @@ function moveShip(name, which_ship, where, priority=1, emit_done=true){
 		changeParent(ship, animation_div);
 		moveAnimate(ship, player_board_container, startpoint, endpoint, ship_fast_animation_speed, function(){
 			changeParent(ship, player_boards[name].div);
+			ship.style.zIndex = ""; //so dock slots work properly later
 			if(emit_done){socket.emit("done");}
 		});
 	}

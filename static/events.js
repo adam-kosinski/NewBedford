@@ -169,7 +169,14 @@ document.addEventListener("click", function(e){
 			}
 		}
 		else if(building == "tryworks"){
-			
+			//check if player has right whales they can return
+			let n_on_small = Number(player_boards[my_name].small_ship_right_whale_counter.textContent);
+			let n_on_big = Number(player_boards[my_name].big_ship_right_whale_counter.textContent);
+			if(n_on_small == 0 && n_on_big == 0){
+				alert("You don't have any right whales on your ships, going here will do nothing.");
+				return;
+			}
+			openPopup("tryworks_popup");
 		}
 		else if(building == "wharf"){
 			//check if have a prepared ship

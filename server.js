@@ -7,9 +7,9 @@ Currently easy to mistype your name when reentering, make that better - low prio
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
 For 2 player game, don't include 3-4 player buildings
 
-Fix it so that clicking on any of a buildings children will activate the building
+From client-side, as soon as something is sent to the server, disable all buildings by setting my_name=false and calling updateSelectableBuildings()
 
-updateGameDivSize() isn't working when penguin builds a building (for vertical expansion), even if run from the console after the fact. Works upon reload though
+Fix it so that clicking on any of a buildings children will activate the building
 
 FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
 
@@ -164,8 +164,9 @@ class Ocean { //TODO: fix counts
 		this.whale_choose_queue = []; //array of ships in the ocean, defined by this.initWhaleChooseQueue() below
 		this.whale_choose_idx = undefined; //index in this.whale_choose_queue representing the current choosing ship. undefined if not choosing
 	}
-	getShips(){
+	getShips(distance=undefined){
 		//returns an array of ships on the ocean in whale-choosing order (first by distance, then by priority)
+		//if distance specified, only returns ships at that distance
 		let out = [];
 		for(let i=0; i<game.players.length; i++){
 			let name = game.players[i];
@@ -178,6 +179,9 @@ class Ocean { //TODO: fix counts
 				out.push(big);
 			}
 		}
+		if(distance != undefined){
+			out = out.filter(ship => ship.distance == distance);
+		}
 		out.sort(function(a,b){
 			if(a.distance > b.distance){return -1;}
 			if(a.distance < b.distance){return 1;}
@@ -187,9 +191,10 @@ class Ocean { //TODO: fix counts
 			if(a.priority > b.priority){return 1;}
 			
 			//if still didn't pass, something went very wrong
-			console.log("TWO SHIPS HAVE THE SAME DISTANCE AND PRIORITY");
+			console.log("TWO SHIPS HAVE THE SAME DISTANCE AND PRIORITY",a,b);
 			return 0;
 		});
+		
 		return out;
 	}
 	putWhalesBack(){
@@ -250,6 +255,10 @@ class Game {
 		this.worker_cycle = 0; //0 or 1, depending on if players are placing their first or second player
 		this.round = 1;
 		
+		this.inn_player = undefined; //If someone places a worker on the inn, this changes to their name. Examined in this.nextTurn() to see whether to do an inn phase
+		this.inn_phase_active = false;
+		//this.inn_workers_placed = 0; //increments each time the inn_player uses a worker in the inn phase, when it gets to 2,
+		
 		this.ocean = new Ocean(this.players.length);
 		this.return_queue = []; //holds Ship objects needing to be returned (during movement phase). Index 0 returns first. Ships spliced from index 0 as they're returned
 		
@@ -279,13 +288,63 @@ class Game {
 				this.current_player = 0;
 				//then continue on to tell sockets to change player turn (below)
 			}
-			else {
-				//set it to no one's turn, then do movement phase
+			else {				
+				//set it to no one's turn
 				queue.add(function(){
 					io.sockets.emit("set_turn", undefined);
 					console.log("queue emitting set_turn for no one");
 				});
-				queue.add(game.movementPhase, true);
+				
+				//check inn stuff
+				if(this.inn_player && !this.inn_phase_active){
+					//start inn phase
+					this.inn_phase_active = true;
+					
+					//move workers back to storage to be placed for inn actions
+					//tell buildings that workers left
+					let b1 = players[this.inn_player].workers_at[0];
+					let b2 = players[this.inn_player].workers_at[1];
+					for(let i=0; i<game.buildings.length; i++){
+						if(game.buildings[i].type == b1 || game.buildings[i].type == b2){
+							console.log("clear 1 worker from", game.buildings[i].type);
+							game.buildings[i].workers--;
+						}
+					}
+					//move workers
+					players[this.inn_player].workers_at = ["player_board","player_board"];
+					queue.add(function(){
+						console.log("queue emitting inn player workers back to storage");
+						io.sockets.emit("move_worker", game.inn_player, "player_board");
+					});
+					
+					//tell clients inn phase is starting
+					queue.add(function(){
+						io.sockets.emit("start_inn_phase", game.inn_player);
+						console.log("queue emitting start_inn_phase");
+					});
+				}
+				if(this.inn_phase_active && players[this.inn_player].workers_at.includes("player_board")){
+					//set the turn to the inn player
+					queue.add(function(){
+						io.sockets.emit("set_turn", game.inn_player);
+						console.log("queue emitting set_turn for inn player");
+					});
+				}
+				else {
+					/*either: 1) Inn phase wasn't active
+							  2) All inn workers have been placed, done with inn phase */
+					
+					this.inn_player = undefined;
+					this.inn_phase_active = false;
+					
+					//tell players inn phase isn't active
+					queue.add(function(){
+						io.sockets.emit("end_inn_phase");
+						console.log("inn phase not active");
+					});
+					
+					queue.add(game.movementPhase, true);
+				}
 				return;
 			}
 		}
@@ -412,12 +471,25 @@ class Game {
 			}, true);
 		}
 	}
+	postOffice(){
+		if(buildings.post_office.owner != undefined){
+			queue.add(function(){
+				io.sockets.emit("give", buildings.post_office.owner, {money: 2}, "post_office");
+				players[buildings.post_office.owner].money += 2;
+				console.log("queue emitting post office give");
+			});
+		}
+	}
 	nextRound(){
 		console.log("Round " + (this.round+1) + " starting");
 		
 		//increment round, return ships if at game end
 		this.round++;
 		if(this.round > 12){
+			
+			//check post office first
+			this.postOffice();
+			
 			//return all ships
 			console.log("Game ending, returning all ships");
 			queue.add(function(){
@@ -443,6 +515,9 @@ class Game {
 			io.sockets.emit("banner","Round " + game.round + ": Action Phase");
 			console.log("queue emitting next round banner");
 		});
+		
+		//check post office
+		this.postOffice();
 		
 		//workers back to storage
 		queue.add(function(){
@@ -1108,9 +1183,54 @@ function initBuildings(){
 		});
 	});
 
-	new Building("inn", false, function(name){});
+	new Building("inn", false, function(name){
+		game.inn_player = name;
+	});
 
-	new Building("lighthouse", false, function(name){});
+	new Building("lighthouse", false, function(name, data){
+		let ship = players[name][data.which_ship];
+		let start_dist = ship.distance;
+		let start_priority = ship.priority;
+		
+		
+		//if any ships in next row, move them over to the right one
+		let next_row = game.ocean.getShips(ship.distance + 1);
+		console.log("next_row", next_row);
+		if(next_row.length > 0){
+			queue.add(function(){
+				for(let i=0; i<next_row.length; i++){
+					io.sockets.emit("move_ship", next_row[i].owner, next_row[i].type, "right");
+					next_row[i].priority += 1;
+				}
+				console.log("queue emitting lighthouse - move ships out of the way");
+			});
+		}
+		
+		//move this ship out to sea into the first priority spot
+		ship.distance += 1;
+		ship.priority = 1;
+		queue.add(function(){
+			io.sockets.emit("move_ship", ship.owner, ship.type, start_dist + 1, 1);
+			console.log("queue emitting lighthouse - move this ship to sea");
+		});
+		
+		
+		
+		//if any ships in previous row at lower priority (larger priority number), move them over to the left one
+		let prev_row = game.ocean.getShips(start_dist); //won't include ship we're moving to sea, b/c we've already changed its state
+		console.log("prev_row", prev_row);
+		if(prev_row.length > 0){
+			queue.add(function(){
+				for(let i=0; i<prev_row.length; i++){
+					if(prev_row[i].priority > start_priority){
+						io.sockets.emit("move_ship", prev_row[i].owner, prev_row[i].type, "left");
+						prev_row[i].priority -= 1;
+					}
+				}
+				console.log("queue emitting lighthouse - move ships from old row over");
+			});
+		}
+	});
 
 	new Building("lumber_mill", false, function(name, data){
 		queue.add(function(){
@@ -1146,7 +1266,13 @@ function initBuildings(){
 
 	new Building("municipal_office", false, function(name){});
 
-	new Building("post_office", false, function(name){});
+	new Building("post_office", false, function(name){
+		queue.add(function(){
+			io.sockets.emit("move_post_office", name);
+			buildings.post_office.owner = name;
+			console.log("queue emitting move_post_office");
+		});
+	});
 
 	new Building("schoolhouse", false, function(name){
 		queue.add(function(){
@@ -1169,7 +1295,7 @@ function initBuildings(){
 				game.ocean.whaling_result[i] = undefined;
 			}
 		}
-				
+		
 		//tell clients to do stuff
 		queue.add(function(){
 			io.sockets.emit("sell_empty_sea", n_to_sell);

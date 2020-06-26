@@ -34,6 +34,43 @@
 }
 
 
+
+/* rulebook -------------------------------- */
+#rulebook {
+	background-color: initial;
+	border: initial;
+	padding: 0;
+	width: 100vw;
+	height: 100vh;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url('/static/images/rules/page_1.png');
+}
+#next_page {
+	width: 30vw;
+	height: 100vh;
+	right: 0;
+	cursor: pointer;
+}
+#prev_page {
+	width: 30vw;
+	height: 100vh;
+	left: 0;
+	cursor: default;
+}
+#rulebook .x_button {
+	top: 3vh;
+	right: 3vw;
+	width: 40px;
+	height: 40px;
+	font-size: 36px;
+	line-height: 40px;
+	color: antiquewhite;
+	text-shadow: 0 0 10px black;
+}
+
+
 /* sell whale popup ------------------------*/
 
 #sell_whale_popup {

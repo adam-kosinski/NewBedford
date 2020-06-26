@@ -19,7 +19,7 @@ function init_game_display(players, game){
 	town_image.src = "/static/images/town.png";
 	town_image.id = "town_image";
 	town.appendChild(town_image);
-		
+	
 	let ocean_image = document.createElement("img");
 	ocean_image.src = "/static/images/ocean.png";
 	ocean_image.id = "ocean_image";
@@ -29,6 +29,9 @@ function init_game_display(players, game){
 	ship_highlighter = document.createElement("div");
 	ship_highlighter.id = "ship_highlighter";
 	ocean.appendChild(ship_highlighter);
+	
+	//add ocean_mask_sign
+	ocean.appendChild(ocean_mask_sign);
 	
 	//add round counter whale and put it in correct place
 	round_counter_whale = document.createElement("img");
@@ -272,8 +275,15 @@ function init_game_display(players, game){
 	town_bounding_box = getTownBoundingBox();
 	updateGameDivSize();
 	
+	
 	//set the correct player's turn
-	setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
+	if(game.inn_phase_active){
+		inn_phase_active = true;
+		setTurn(game.inn_player);
+	}
+	else {
+		setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
+	}
 }
 
 

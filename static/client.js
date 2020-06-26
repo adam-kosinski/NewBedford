@@ -21,6 +21,7 @@ function registerName(){
 		console.log("Name registration success:",success);
 		if(!success){
 			alert("'"+my_name+"' is taken. Please choose another");
+			my_name = undefined;
 			registerName();
 		}
 	});
@@ -121,6 +122,10 @@ socket.on("build", function(name, building){
 	building_areas[name].build(building);
 });
 
+socket.on("move_post_office", function(name){
+	building_areas[name].movePostOfficeHere(); //buildings.js
+});
+
 socket.on("sell_empty_sea", function(n){
 	sellEmptySea(n); //update.js
 });
@@ -194,6 +199,19 @@ socket.on("move_first_player_token", function(name){
 	moveFirstPlayerToken(name); //update.js
 });
 
+socket.on("start_inn_phase", function(inn_player){
+	if(my_name == inn_player){
+		alert("Place your workers again (because you used the inn). Only common town/whaling actions are allowed; you may not place a worker on a building owned by a player.");
+	}
+	inn_phase_active = true;
+	socket.emit("done");
+});
+
+socket.on("end_inn_phase", function(){
+	inn_phase_active = false;
+	socket.emit("done");
+});
+
 socket.on("banner", function(message){
 	banner.textContent = message;
 	banner.style.display = "block";
@@ -222,6 +240,7 @@ socket.on("clear_game", function(){
 	whale_seller = undefined;
 	whale_to_sell = undefined;
 	whale_buyer = undefined;
+	lighthouse_screen_open = false;
 	
 	player_boards = {};
 	buildings = {};
@@ -229,6 +248,7 @@ socket.on("clear_game", function(){
 	dock_slots = [];
 	
 	game_active = false;
+	inn_phase_active = false;
 	round = 1;
 	animation_in_progress = false; //click event handlers only run when this is false
 	my_turn = false;
@@ -270,13 +290,19 @@ socket.on("clear_game", function(){
 	town.style.top = "";
 	ocean.style.left = "";
 	ocean.style.top = "";
+	ocean.style.zIndex = "";
+	ocean.style.cursor = "";
 	board.style.left = "";
 	board.style.top = "";
 	ocean_bag.style.left = "";
 	ocean_bag.style.top = "";
+	game_div.style.width = "";
+	game_div.style.height = "";
 	
 	banner.style.display = "none";
 	choose_whale_sign.style.display = "none";
+	ocean_mask.style.display = "none";
+	ocean_mask_sign.style.display = "none";
 	
 	//show home screen
 	game_div.style.display = "none";

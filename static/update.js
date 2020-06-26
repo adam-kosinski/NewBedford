@@ -405,6 +405,9 @@ function updateSelectableBuildings(){
 				else if(buildings[type].getNumberOfWorkers() >= 1){
 					buildings[type].setSelectable(false);
 				}
+				else if(inn_phase_active){
+					buildings[type].setSelectable(false);
+				}
 				else {
 					buildings[type].setSelectable(true);
 				}

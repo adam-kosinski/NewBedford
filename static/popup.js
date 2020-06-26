@@ -161,10 +161,39 @@ document.addEventListener("click", function(e){
 		closePopups();
 	}
 	
+	
+	//rulebook
+	if(e.target.id == "next_page"){
+		rulebook_page = Math.min(rulebook_page + 1, 9);
+		document.getElementById("rulebook").style.backgroundImage = "url('/static/images/rules/page_" + rulebook_page + ".png')";
+	}
+	if(e.target.id == "prev_page"){
+		rulebook_page = Math.max(rulebook_page - 1, 1);
+		document.getElementById("rulebook").style.backgroundImage = "url('/static/images/rules/page_" + rulebook_page + ".png')";
+	}
+	//take care of cursor
+	let next_page = document.getElementById("next_page");
+	let prev_page = document.getElementById("prev_page");
+	if(rulebook_page == 1){
+		prev_page.style.cursor = "default";
+	}
+	else if(rulebook_page == 9){
+		next_page.style.cursor = "default";
+	}
+	else {
+		next_page.style.cursor = "pointer";
+		prev_page.style.cursor = "pointer";
+	}
+	
+	
 	//build menu
 	if(e.target.id == "build_menu_mallet" || (e.target.parentElement && e.target.parentElement.id == "build_menu_mallet")){
 		build_menu_select_mode = false;
 		openPopup("build_menu");
+	}
+	
+	if(e.target.id == "rule_menu" || (e.target.parentElement && e.target.parentElement.id == "rule_menu")){
+		openPopup("rulebook");
 	}
 	
 	if(build_menu_select_mode && e.target.tagName == "IMG"){
@@ -346,4 +375,83 @@ document.addEventListener("click", function(e){
 	
 });
 
+
+
+
+
+
+
+/* Lighthouse stuff -------------------------------------------- */
+
+function showLighthouseScreen(){
+	closePopups(); //just in case?
+	
+	ocean.style.zIndex = 16;
+	ocean_mask.style.display = "block";
+	ocean_mask_sign.style.display = "block";
+	
+	buildings.dockyard.div.classList.remove("selectable");
+	buildings.city_pier.div.classList.remove("selectable");
+	
+	lighthouse_screen_open = true;
+}
+
+function hideLighthouseScreen(){
+	ocean_mask.style.display = "none";
+	ocean_mask_sign.style.display = "none";
+	ocean.style.zIndex = 1;
+	
+	updateSelectableBuildings();
+	
+	lighthouse_screen_open = false;
+}
+
+
+document.addEventListener("keydown", function(e){
+	if(e.key == "Escape" && lighthouse_screen_open){
+		hideLighthouseScreen();
+		ship_highlighter.style.display = "none";
+	}
+});
+
+ocean.addEventListener("mousemove", function(e){
+	if(lighthouse_screen_open && e.target == player_boards[my_name].small_ship && e.target.distance != undefined){
+		ocean.style.cursor = "pointer";
+		highlightShip(my_name, "small_ship");
+	}
+	else if(lighthouse_screen_open && e.target == player_boards[my_name].big_ship && e.target.distance != undefined){
+		ocean.style.cursor = "pointer";
+		highlightShip(my_name, "big_ship");
+	}
+	else {
+		if(lighthouse_screen_open){ship_highlighter.style.display = "none";}
+		ocean.style.cursor = "";
+	}
+});
+
+ocean.addEventListener("click", function(e){
+	if(lighthouse_screen_open && e.target == player_boards[my_name].small_ship && e.target.distance != undefined){
+		//check if next row is full
+		if(getNumberOfShipsAtDistance(e.target.distance + 1) >= 3){
+			alert("The next row is full, you can't move your ship there.");
+		}
+		else {
+			hideLighthouseScreen();
+			ocean.style.cursor = "";
+			ship_highlighter.style.display = "none";
+			socket.emit("place_worker", "lighthouse", {which_ship: "small_ship"});
+		}
+	}
+	else if(lighthouse_screen_open && e.target == player_boards[my_name].big_ship && e.target.distance != undefined){
+		if(getNumberOfShipsAtDistance(e.target.distance + 1) >= 3){
+			alert("The next row is full, you can't move your ship there.");
+		}
+		else {
+			hideLighthouseScreen();
+			ocean.style.cursor = "";
+			ship_highlighter.style.display = "none";
+			socket.emit("place_worker", "lighthouse", {which_ship: "big_ship"});
+		}
+	}
+});
 

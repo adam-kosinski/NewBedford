@@ -114,8 +114,7 @@ class BuildingArea {
 		//add to storage
 		building_areas[name] = this;
 	}
-	
-	build(building_name, animate=true){
+	getEmptyLocation(){
 		//calculate location (relative to town div)
 		/*method:
 		We can calculate a pre-defined sequence of locations (center of building) w/ respect to the center of the central town, in the top-right build space
@@ -124,10 +123,6 @@ class BuildingArea {
 		Check how many BuildingAreas exist, rotate appropriately
 		Add offsets to make location top-left of building, and relative to upper-left of town div instead of town center
 		*/
-		
-		if(buildings.hasOwnProperty(building_name)){
-			throw new Error("Cannot build duplicate building");
-		}
 		
 		let seq = [
 			{x: 50, y: -195}, //center
@@ -162,23 +157,13 @@ class BuildingArea {
 		pos.x += (-0.5*building_width) + (0.5*town_width);
 		pos.y += (-0.5*building_height) + (0.5*town_height);
 		
-		
-		//now place the building there
-		let building = new Building(building_name);
-		building.setPosition(pos.x, pos.y);
-		this.buildings[n] = building_name;
-		
-		if(animate){
-			building.div.style.opacity = 0;
-			fadeAnimate(building.div, 0, 1, building_fade_in_time, function(){
-				updateGameDivSize();
-				socket.emit("done");
-			});
-		}
-		//no need to emit "done" if not animating - the server only ever builds from the queue w/ animation
-		
-		
-		//figure out if the layout needs resizing based on changes to town bounding box
+		return {
+			pos: pos,
+			idx: n
+		};
+	}
+	
+	resizeTownLayout(animate=true, animation_duration=build_duration){
 		let new_town_box = getTownBoundingBox();
 		let board_x_offset = town_bounding_box.x_min - new_town_box.x_min;
 		let town_y_offset = town_bounding_box.y_min - new_town_box.y_min;
@@ -193,8 +178,10 @@ class BuildingArea {
 				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(board, animation_div);
 				let endpoint = {x: startpoint.x + board_x_offset, y: startpoint.y};
+				let distance = Math.hypot(endpoint.x-startpoint.x, endpoint.y-startpoint.y);
+				let speed = distance / animation_duration;
 				changeParent(board, animation_div);
-				moveAnimate(board, game_div, startpoint, endpoint, layout_move_speed, function(){
+				moveAnimate(board, game_div, startpoint, endpoint, speed, function(){
 					changeParent(board, game_div);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
@@ -212,8 +199,10 @@ class BuildingArea {
 				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(town, animation_div);
 				let endpoint = {x: startpoint.x, y: startpoint.y + town_y_offset};
+				let distance = Math.hypot(endpoint.x-startpoint.x, endpoint.y-startpoint.y);
+				let speed = distance / animation_duration;
 				changeParent(town, animation_div);
-				moveAnimate(town, board, startpoint, endpoint, layout_move_speed, function(){
+				moveAnimate(town, board, startpoint, endpoint, speed, function(){
 					changeParent(town, board);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
@@ -231,8 +220,10 @@ class BuildingArea {
 				animation_div.style.zIndex = 1;
 				let startpoint = getLocation(ocean, animation_div);
 				let endpoint = {x: startpoint.x + ocean_x_offset, y: startpoint.y};
+				let distance = Math.hypot(endpoint.x-startpoint.x, endpoint.y-startpoint.y);
+				let speed = distance / animation_duration;
 				changeParent(ocean, animation_div);
-				moveAnimate(ocean, board, startpoint, endpoint, layout_move_speed, function(){
+				moveAnimate(ocean, board, startpoint, endpoint, speed, function(){
 					changeParent(ocean, board);
 					town_bounding_box = getTownBoundingBox(); //it changed during the animation
 					updateGameDivSize();
@@ -245,6 +236,96 @@ class BuildingArea {
 				updateGameDivSize();
 			}
 		}
+		
+		//resize things anyways (in case all the offsets were 0)
+		town_bounding_box = getTownBoundingBox();
+		updateGameDivSize();
+	}
+	
+	build(building_name, animate=true){
+		
+		if(buildings.hasOwnProperty(building_name)){
+			throw new Error("Cannot build duplicate building");
+		}
+		
+		//get location for new building
+		let new_location = this.getEmptyLocation();
+		let pos = new_location.pos;
+		
+		//now place the building there
+		let building = new Building(building_name);
+		building.setPosition(pos.x, pos.y);
+		this.buildings[new_location.idx] = building_name;
+		
+		//fade in if animating
+		if(animate){
+			building.div.style.opacity = 0;
+			fadeAnimate(building.div, 0, 1, build_duration, function(){
+				updateGameDivSize();
+				socket.emit("done");
+			});
+		}
+		//no need to emit "done" if not animating - the server only ever builds from the queue w/ animation
+		
+		//at the same time as fading, resize the layout based on changes to the town's bounding box
+		//animate at the same time as the fade, but the fade will take care of emitting done
+		this.resizeTownLayout(animate);
+	}
+	
+	movePostOfficeHere(){
+		//Post office moving animation method:
+		//create a new invisible (but displayed) fake building - just a div w/ class "building" - and put it where the post office should end up
+		//at the same time, move the real post office into the board div (to get it out of the town)
+		//resize the town layout animation (which uses the fake not the real post office now)
+		//put the post office back into the town, animate the post office moving to its new location. Should end at same time as layout animation ending.
+		//when post office moving animation ends, remove the fake post office
+		//remember to move it out of the buildings array from its previous BuildingArea into this.buildings
+		
+		//get new location of post office relative to town
+		let new_location = this.getEmptyLocation();
+		let new_pos = new_location.pos;
+		let idx = new_location.idx;
+		
+		//create fake building
+		let fake = document.createElement("div");
+		fake.className = "building";
+		fake.style.opacity = 0;
+		fake.style.left = new_pos.x + "px";
+		fake.style.top = new_pos.y + "px";
+		town.appendChild(fake);
+		
+		//get current post office out of the town before redo-ing the layout
+		let post_office = buildings.post_office;
+		changeParent(post_office.div, board);
+		
+		//figure out post office moving animation config
+		let startpoint = getLocation(post_office.div, town);
+		let endpoint = new_pos;
+		let distance = Math.hypot(endpoint.x-startpoint.x, endpoint.y-startpoint.y);
+		let duration = distance / post_office_speed;
+		
+		//resize town layout
+		this.resizeTownLayout(true, duration);
+		
+		//put the real post office back in the town, animate it going to the correct place
+		changeParent(post_office.div, town);
+		
+		//animate as a child of the town
+		moveAnimate(post_office.div, animation_div, startpoint, endpoint, post_office_speed, function(){
+			fake.remove();
+			socket.emit("done");
+		});
+		
+		
+		//update both BuildingArea's buildings array
+		for(let name in building_areas){
+			for(let i=0; i<building_areas[name].buildings.length; i++){
+				if(building_areas[name].buildings[i] == "post_office"){
+					building_areas[name].buildings[i] = undefined;
+				}
+			}
+		}
+		this.buildings[idx] = "post_office";
 	}
 }
 
@@ -259,17 +340,14 @@ function getTownBoundingBox(){
 	let x_max = -Infinity;
 	let y_min = Infinity;
 	let y_max = -Infinity;
-	let building_elements = document.getElementsByClassName("building");
+	let building_elements = town.getElementsByClassName("building");
 	
 	for(let i=0; i<building_elements.length; i++){
-		let b = building_elements[i];
-		if(b.object.type != "dockyard" && b.object.type != "city_pier"){ //don't include whaling buildings
-			let box = b.getBoundingClientRect();
-			x_min = Math.min(x_min, box.x);
-			x_max = Math.max(x_max, box.x + box.width);
-			y_min = Math.min(y_min, box.y);
-			y_max = Math.max(y_max, box.y + box.height);
-		}
+		let box = building_elements[i].getBoundingClientRect();
+		x_min = Math.min(x_min, box.x);
+		x_max = Math.max(x_max, box.x + box.width);
+		y_min = Math.min(y_min, box.y);
+		y_max = Math.max(y_max, box.y + box.height);
 	}
 	
 	//correct for scroll
@@ -295,7 +373,7 @@ function updateGameDivSize(){
 	let ocean_box = ocean.getBoundingClientRect();
 	
 	game_div.style.width = ocean_box.right - game_div_box.x + 10 + "px";
-	game_div.style.height = town_bounding_box.y_max - game_div_box.y + 30 + "px";
+	game_div.style.height = town_bounding_box.y_max + 30 + "px";
 }
 
 

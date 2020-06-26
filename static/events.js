@@ -12,6 +12,11 @@ start_button.addEventListener("click", function(){
 });
 
 
+document.getElementById("home_screen_rulebook_menu").addEventListener("click", function(){
+	openPopup("rulebook");
+});
+
+
 document.getElementById("clear_game_button").addEventListener("click", function(){
 	if(confirm("Are you sure you want to clear the current game? All stored progress will be lost.")){
 		if(confirm("Are you super definitely 100% sure?")){
@@ -106,6 +111,9 @@ document.addEventListener("click", function(e){
 			launch_type = "city_pier";
 			openPopup("launch_popup");
 		}
+		
+		
+		//player buildings requiring checks or further input 
 		else if(building == "cooperage"){
 			//see if there are any whales on a ship, if not, alert the player
 			let ship_types = ["small_ship", "big_ship"];
@@ -128,7 +136,6 @@ document.addEventListener("click", function(e){
 			
 			alert("You don't have any whales on one of your ships, going here will give you nothing.");
 		}
-		//player buildings requiring further input 
 		else if(building == "courthouse"){
 			build_type = "courthouse";
 			build_menu_select_mode = true;
@@ -150,13 +157,29 @@ document.addEventListener("click", function(e){
 			openPopup("launch_popup");
 		}
 		else if(building == "lighthouse"){
-			
+			//make sure there's a ship in the ocean
+			updateShipPriorityAndDistance(); //just in case
+			if(player_boards[my_name].small_ship.distance == undefined && player_boards[my_name].big_ship.distance == undefined){
+				alert("You don't have any ships in the ocean to move.");
+			}
+			else {
+				showLighthouseScreen(); //bottom of popup.js
+			}
 		}
 		else if(building == "lumber_mill"){
 			openPopup("lumber_mill_popup");
 		}
 		else if(building == "market"){
 			openPopup("market_popup");
+		}
+		else if(building == "post_office"){
+			//don't let me go there if I own it
+			if(building_areas[my_name].buildings.includes("post_office")){
+				alert("You already own the post office");
+			}
+			else {
+				socket.emit("place_worker", "post_office");
+			}
 		}
 		else if(building == "tavern"){
 			//only emit to server if there are ocean tiles, if none alert the user
@@ -198,7 +221,6 @@ document.addEventListener("click", function(e){
 				building == "brickyard" ||
 				building == "chandlery" ||
 				building == "inn" ||
-				building == "post_office" ||
 				building == "schoolhouse")
 		{
 			socket.emit("place_worker", building);

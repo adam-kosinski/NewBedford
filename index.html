@@ -14,9 +14,26 @@
 		
 		<div id="home_screen">
 			<h1>Welcome!</h1>
-			<img src="/static/images/box_cover.jpg"/>
+			<table id="home_screen_rulebook_menu" class="selectable">
+				<tbody>
+					<tr>
+						<td>View<br>rules</td>
+						<td><img src="/static/images/rules/cover.png"/></td>
+					</tr>
+				</tbody>
+			</table>
+			<img id="box_cover" src="/static/images/box_cover.jpg"/>
 			<div id="player_display"></div>
 			<button id="start_button">Start Game</button>
+		</div>
+		
+			
+		<!-- rulebook popup needs to be outside game_div so you can see it from the home screen -->
+		<div id="popup_background"></div> <!-- which also means the popup background has to be outside game div -->
+		<div id="rulebook" class="popup">
+			<div id="next_page"></div>
+			<div id="prev_page"></div>
+			<div class="x_button">&#10006;</div>
 		</div>
 		
 		<div id="game_div">
@@ -29,6 +46,11 @@
 			<div id="board">
 				<div id="town"></div>
 				<div id="ocean"></div>
+			</div>
+			<div id="ocean_mask"></div> <!--for lighthouse stuff, blacking out everything but the ocean-->
+			<div id="ocean_mask_sign">
+				<h3 id="ocean_mask_sign_title">Click ship to move out</h3>
+				<p>(press esc to cancel)</p>
 			</div>
 			<div id="ocean_bag">
 				<div id="ocean_bag_background"></div>
@@ -59,7 +81,6 @@
 			</div>
 			
 			<!--Popups-->
-			<div id="popup_background"></div>
 			
 			<div id="sell_whale_popup" class="popup">
 				<!-- this one's not closable by the user, no x-button -->
@@ -266,6 +287,8 @@
 			</div>
 			
 		</div>
+		
+		
 		
 		<script src="/static/globals.js"></script>
 		

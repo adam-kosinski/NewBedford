@@ -16,6 +16,8 @@ let ship_highlighter; //created in initGameDisplay() - init.js
 let round_counter_whale; //created in initGameDisplay() - init.js
 let choose_whale_sign = document.getElementById("choose_whale_sign");
 let choose_whale_pass_button = document.getElementById("choose_whale_pass_button");
+let ocean_mask = document.getElementById("ocean_mask"); //for lighthouse
+let ocean_mask_sign = document.getElementById("ocean_mask_sign");
 
 let first_player_token = document.getElementById("first_player_token");
 
@@ -42,6 +44,8 @@ let whale_seller = undefined;
 let whale_to_sell = undefined;
 let whale_buyer = undefined;
 
+let lighthouse_screen_open = false; //so mouseover event knows whether to highlight ships
+
 
 //bulk DOM info (references, locations, data)
 let player_boards = {}; //keys are player names, contains PlayerBoard objects (see init.js)
@@ -53,7 +57,9 @@ let dock_slots = []; //contains dock slot HTML divs, positioned correctly and wi
 
 //state
 let my_name;
+let rulebook_page = 1;
 let game_active = false;
+let inn_phase_active = false; //used by updateSelectableBuildings(), if true only common town/whaling actions will be selectable
 let round = 1;
 let animation_in_progress = false; //click event handlers only run when this is false
 let my_turn = false;
@@ -76,8 +82,8 @@ let time_between_gives = 150; //ms
 
 let worker_animation_speed = 0.4; //pixels/ms
 
-let building_fade_in_time = 2000; //ms
-let layout_move_speed = 50 / building_fade_in_time; //pixels/ms
+let build_duration = 2000; //ms
+let post_office_speed = 0.3; //speed of post office moving from one person to another
 
 let ship_fast_animation_speed = 0.4; //pixels/ms - for things like docking or returning to storage
 let ship_medium_animation_speed = 0.2; //pixels/ms - for launching
@@ -87,7 +93,7 @@ let ocean_bag_speed = 0.4; //pixels/ms
 let time_between_whales_back_in = 200; //ms, for when unclaimed whales go back in the bag
 let whale_draw_speed = 0.1; //coming out the bag
 let whale_medium_speed = 0.3; //moving to and from the bag to the storage on the right of the ocean
-let whale_fast_speed = 0.4; //moving from ocean storage to a player's ship
+let whale_fast_speed = 0.6; //moving from ocean storage to a player's ship
 
 let whale_counter_speed = 0.2;
 

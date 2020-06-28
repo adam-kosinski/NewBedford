@@ -13,6 +13,14 @@ function openPopup(id){ //id of popup's HTML element, or for stores: name of sto
 	closePopups(); //only have one open at a time
 		
 	//popup specific stuff
+	if(id == "initial_resources_popup"){
+		document.getElementById("starting_food").textContent = 0;
+		document.getElementById("starting_wood").textContent = 0;
+		document.getElementById("starting_brick").textContent = 0;
+		document.getElementById("starting_money").textContent = 0;
+		document.getElementById("starting_total").textContent = 0;
+		document.getElementById("ready_button").disabled = true;
+	}
 	if(id == "sell_whale_popup"){
 		document.getElementById("whale_seller_name").textContent = whale_seller==my_name? "You are selling:" : whale_seller + " is selling:";
 		document.getElementById("whale_to_sell_display").src = "/static/images/" + whale_to_sell + ".png";
@@ -186,6 +194,60 @@ document.addEventListener("click", function(e){
 	}
 	
 	
+	
+	//initial resources
+	//plus-minus stuff
+	if(e.target.parentElement.classList.contains("starting")){
+		let counter =  e.target.parentElement.previousElementSibling;
+		let type = counter.id.match(/food|wood|brick|money/)[0];
+		
+		if(e.target.classList.contains("plus")){
+			counter.textContent = Number(counter.textContent) + 1;
+		}
+		if(e.target.classList.contains("minus")){
+			counter.textContent = Math.max(Number(counter.textContent) - 1, 0);
+		}
+		
+		//total
+		let total = document.getElementById("starting_total");
+		let n_food = Number(document.getElementById("starting_food").textContent);
+		let n_wood = Number(document.getElementById("starting_wood").textContent);
+		let n_brick = Number(document.getElementById("starting_brick").textContent);
+		let n_money = Number(document.getElementById("starting_money").textContent);
+		total.textContent = n_food + n_wood + 2*n_brick + n_money;
+		
+		//ready_button state
+		let ready_button = document.getElementById("ready_button");
+		if(total.textContent == "5"){
+			ready_button.disabled = false;
+			ready_button.style.cursor = "pointer";
+		}
+		else {
+			ready_button.disabled = true;
+			ready_button.style.cursor = "default";
+		}
+	}
+	if(e.target.id == "ready_button"){
+		let n_food = Number(document.getElementById("starting_food").textContent);
+		let n_wood = Number(document.getElementById("starting_wood").textContent);
+		let n_brick = Number(document.getElementById("starting_brick").textContent);
+		let n_money = Number(document.getElementById("starting_money").textContent);
+		let starting_resources = {
+			food: n_food,
+			wood: n_wood,
+			brick: n_brick,
+			money: n_money
+		};
+		
+		closePopups();
+		socket.emit("initial_resources", starting_resources);
+	}
+	
+	
+	
+	
+	
+	
 	//build menu
 	if(e.target.id == "build_menu_mallet" || (e.target.parentElement && e.target.parentElement.id == "build_menu_mallet")){
 		build_menu_select_mode = false;
@@ -272,14 +334,20 @@ document.addEventListener("click", function(e){
 	//warehouse
 	if(e.target.id == "warehouse_wood"){
 		socket.emit("place_worker", "warehouse", {brick: 1, wood: 1});
+		my_turn = false;
+		updateSelectableBuildings();
 		closePopups();
 	}
 	else if(e.target.id == "warehouse_food"){
 		socket.emit("place_worker", "warehouse", {brick: 1, food: 1});
+		my_turn = false;
+		updateSelectableBuildings();
 		closePopups();
 	}
 	else if(e.target.id == "warehouse_brick"){
 		socket.emit("place_worker", "warehouse", {brick: 2});
+		my_turn = false;
+		updateSelectableBuildings();
 		closePopups();
 	}
 	
@@ -295,6 +363,8 @@ document.addEventListener("click", function(e){
 		}
 		console.log(sell_data)
 		socket.emit("place_worker", opened_store, sell_data);
+		my_turn = false;
+		updateSelectableBuildings();
 		closePopups();
 	}
 	else if(e.target.id == "food_plus"){
@@ -357,6 +427,8 @@ document.addEventListener("click", function(e){
 			
 			let cost = Number(document.getElementById("cost_"+distance).textContent);
 			socket.emit("place_worker", launch_type, {distance: distance, cost:cost});
+			my_turn = false;
+			updateSelectableBuildings();
 			closePopups();
 		}
 	}
@@ -367,10 +439,14 @@ document.addEventListener("click", function(e){
 	if(e.target.id == "tryworks_small_ship_button"){
 		closePopups();
 		socket.emit("place_worker", "tryworks", {which_ship: "small_ship"});
+		my_turn = false;
+		updateSelectableBuildings();
 	}
 	if(e.target.id == "tryworks_big_ship_button"){
 		closePopups();
 		socket.emit("place_worker", "tryworks", {which_ship: "big_ship"});
+		my_turn = false;
+		updateSelectableBuildings();
 	}
 	
 });
@@ -440,6 +516,8 @@ ocean.addEventListener("click", function(e){
 			ocean.style.cursor = "";
 			ship_highlighter.style.display = "none";
 			socket.emit("place_worker", "lighthouse", {which_ship: "small_ship"});
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 	}
 	else if(lighthouse_screen_open && e.target == player_boards[my_name].big_ship && e.target.distance != undefined){
@@ -451,6 +529,8 @@ ocean.addEventListener("click", function(e){
 			ocean.style.cursor = "";
 			ship_highlighter.style.display = "none";
 			socket.emit("place_worker", "lighthouse", {which_ship: "big_ship"});
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 	}
 });

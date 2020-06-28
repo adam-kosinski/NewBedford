@@ -125,14 +125,14 @@ function give_one(to, thing, from, emit_done=false){
 	//if giving to a player and 'from' is undefined, or if "giving" from a player and 'to' is undefined, will just change the counter w/o animation
 	
 	//check if valid inputs
-	if(! (player_boards.hasOwnProperty(to) || buildings.hasOwnProperty(to) || to instanceof HTMLElement) ){
-		throw new Error("Cannot give stuff to something that's not a player, building, or HTMLElement");
+	if(! (player_boards.hasOwnProperty(to) || buildings.hasOwnProperty(to) || /pay_for/.test(to) || to instanceof HTMLElement || to == undefined) ){
+		throw new Error("Cannot give stuff to something that's not a player, building, a pay_for, HTMLElement, or undefined");
 	}
 	if(!(thing == "food" || thing == "wood" || thing == "brick" || thing == "money")){
 		throw new Error("Cannot give " + thing + ", invalid resource type");
 	}
-	if(! (player_boards.hasOwnProperty(from) || buildings.hasOwnProperty(from) || from instanceof HTMLElement) ){
-		throw new Error("Cannot give stuff from something that's not a player, building, or HTMLElement");
+	if(! (player_boards.hasOwnProperty(from) || buildings.hasOwnProperty(from) || /pay_for/.test(from) || from instanceof HTMLElement || from == undefined) ){
+		throw new Error("Cannot give stuff from something that's not a player, building, a pay_for, HTMLElement, or undefined");
 	}
 	if(player_boards.hasOwnProperty(to) && player_boards.hasOwnProperty(from) && thing != "money"){
 		throw new Error("Cannot give anything but money from one player to another");
@@ -148,6 +148,7 @@ function give_one(to, thing, from, emit_done=false){
 		resource.remove();
 		if(emit_done){socket.emit("done");}
 	};
+	
 	
 	//check if coming from a player
 	if(player_boards.hasOwnProperty(from)){
@@ -167,6 +168,10 @@ function give_one(to, thing, from, emit_done=false){
 	//check if coming from a building
 	else if(buildings.hasOwnProperty(from)){
 		startpoint = getLocation(from, animation_div); //from is a building here
+	}
+	//check if coming from pay_for section
+	else if(from == "pay_for_food" || from == "pay_for_wood"){
+		startpoint = getLocation(from, animation_div, to); //to should be a player here
 	}
 	//check if coming from an HTMLElement
 	else if(from instanceof HTMLElement){
@@ -200,6 +205,11 @@ function give_one(to, thing, from, emit_done=false){
 	else if(buildings.hasOwnProperty(to)){
 		scroll_to_match = game_div;
 		endpoint = getLocation(to, animation_div);
+	}
+	//check if going to pay_for section
+	else if(to == "pay_for_food" || to == "pay_for_wood"){
+		scroll_to_match = player_board_container;
+		endpoint = getLocation(to, animation_div, from); //from should be a player here
 	}
 	//check if going to an HTMLElement
 	else if(to instanceof HTMLElement){
@@ -416,6 +426,19 @@ function updateSelectableBuildings(){
 		else {
 			buildings[type].setSelectable(false);
 		}
+		
+		//do pay_for stuff
+		if(document.getElementById("my_player_board")){ //the elements below won't exist for spectators
+			if(my_turn && !pay_for_used){
+				document.getElementById("pay_for_food").classList.add("pay_for_selectable");
+				document.getElementById("pay_for_wood").classList.add("pay_for_selectable");
+			}
+			else {
+				document.getElementById("pay_for_food").classList.remove("pay_for_selectable");
+				document.getElementById("pay_for_wood").classList.remove("pay_for_selectable");
+			}
+		}
+		
 	}
 }
 
@@ -444,6 +467,7 @@ function setTurn(name){ //name of player, or undefined to set it to no one's tur
 	
 	//change data/enable-disable stuff
 	my_turn = (name == my_name);
+	pay_for_used = false;
 	updateSelectableBuildings();
 	
 	//update GUI stuff
@@ -551,5 +575,29 @@ function sellEmptySea(n){
 	
 	if(n > 0){
 		tokenToTavern();
+	}
+}
+
+
+
+//function to handle the pay 3 money for 2 food/wood (on playerboard)
+
+function payFor(name, resource, step){
+	//name: player name who's doing this
+	//resource: "food" or "wood"
+	//step: 0 or 1, step 0 is paying money, step 1 is receiving the resource
+	
+	if(resource != "food" && resource != "wood"){
+		throw new Error("payFor() only accepts the resources food and wood, not " + resource);
+	}
+	
+	if(step == 0){
+		give("pay_for_" + resource, {money: 3}, name);
+	}
+	
+	if(step == 1){
+		let give_obj = {};
+		give_obj[resource] = 2;
+		give(name, give_obj, "pay_for_" + resource);
 	}
 }

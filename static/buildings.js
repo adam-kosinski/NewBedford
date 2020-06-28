@@ -38,11 +38,12 @@ class Building {
 		updateSelectableBuildings();
 	}
 	
-	addWorkerSlot(x, y){ //coords relative to building div, top-left of the worker
+	addWorkerSlot(x, y, z_index=1){ //coords relative to building div, top-left of the worker. z_index should be 1-8
 		let slot = document.createElement("div");
 		slot.className = "worker_slot";
 		slot.style.top = y + "px";
 		slot.style.left = x + "px";
+		slot.style.zIndex = z_index;
 		this.div.appendChild(slot);
 		this.worker_slots.push(slot);
 	}

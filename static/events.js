@@ -31,9 +31,54 @@ document.addEventListener("click", function(e){
 	
 	console.log(e.pageX, e.pageY);
 	
-	//Buildings
+	if(!pay_for_used && !animation_in_progress){
+		if(e.target.id == "pay_for_food" || (e.target.parentElement && e.target.parentElement.id == "pay_for_food")){
+			//check if have enough money
+			let n_money = Number(player_boards[my_name].money_counter.textContent);
+			if(n_money < 3){
+				alert("You don't have enough money to do this");
+			}
+			else {
+				pay_for_used = true;
+				updateSelectableBuildings();
+				socket.emit("pay_for", "food");
+			}
+		}
+		if(e.target.id == "pay_for_wood" || (e.target.parentElement && e.target.parentElement.id == "pay_for_wood")){
+			//check if have enough money
+			let n_money = Number(player_boards[my_name].money_counter.textContent);
+			if(n_money < 3){
+				alert("You don't have enough money to do this");
+			}
+			else {
+				pay_for_used = true;
+				updateSelectableBuildings();
+				socket.emit("pay_for", "wood");
+			}
+		}
+	}
 	
-	if(e.target.classList.contains("building") && e.target.classList.contains("selectable")){		
+	//Buildings	
+	
+	let building_target;
+	
+	let up_one = e.target.parentElement ? e.target.parentElement : undefined;
+	let up_two = e.target.parentElement ?
+					(e.target.parentElement.parentElement ? e.target.parentElement.parentElement : undefined)
+					: undefined;
+	
+	if(e.target.classList.contains("building")){
+		building_target = e.target;
+	}
+	else if(up_one && up_one.classList.contains("building")){
+		building_target = up_one;
+	}
+	else if(up_two && up_two.classList.contains("building")){
+		building_target = up_two;
+	}
+	
+	
+	if(building_target && building_target.classList.contains("selectable")){		
 		
 		//Checks
 		
@@ -42,7 +87,7 @@ document.addEventListener("click", function(e){
 			return;
 		}
 		
-		let building = e.target.object.type;
+		let building = building_target.object.type;
 		console.log("Clicked on "+building);
 		
 		//check if can pay for the building - if not in town, not my building, and I don't have any money
@@ -66,9 +111,13 @@ document.addEventListener("click", function(e){
 		}
 		else if(building == "forest"){
 			socket.emit("place_worker", "forest");
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 		else if(building == "farm"){
 			socket.emit("place_worker", "farm");
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 		else if(building == "warehouse"){
 			if(buildings.warehouse.getNumberOfWorkers() == 0){
@@ -76,6 +125,8 @@ document.addEventListener("click", function(e){
 			}
 			else {
 				socket.emit("place_worker", "warehouse");
+				my_turn = false;
+				updateSelectableBuildings();
 			}
 		}
 		
@@ -98,6 +149,8 @@ document.addEventListener("click", function(e){
 			
 			let which_ship = available_ships[0].className.match(/small_ship|big_ship/)[0];
 			socket.emit("place_worker", "dockyard", {which_ship: which_ship});
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 		else if(building == "city_pier"){
 			//check if have a prepared ship to launch
@@ -129,6 +182,8 @@ document.addEventListener("click", function(e){
 					let counter = player_boards[my_name][ship_type + "_" + whale_type + "_counter"];
 					if(counter.textContent != "0"){
 						socket.emit("place_worker", "cooperage");
+						my_turn = false;
+						updateSelectableBuildings();
 						return;
 					}
 				}
@@ -179,6 +234,8 @@ document.addEventListener("click", function(e){
 			}
 			else {
 				socket.emit("place_worker", "post_office");
+				my_turn = false;
+				updateSelectableBuildings();
 			}
 		}
 		else if(building == "tavern"){
@@ -186,6 +243,8 @@ document.addEventListener("click", function(e){
 			let empty_sea_tokens = ocean.getElementsByClassName("empty_sea");
 			if(empty_sea_tokens.length > 0){
 				socket.emit("place_worker", "tavern");
+				my_turn = false;
+				updateSelectableBuildings();
 			}
 			else {
 				alert("There are no empty sea tokens available to sell.");
@@ -224,6 +283,8 @@ document.addEventListener("click", function(e){
 				building == "schoolhouse")
 		{
 			socket.emit("place_worker", building);
+			my_turn = false;
+			updateSelectableBuildings();
 		}
 		
 		//no event handlers for buildings w/o actions (e.g. mansion)

@@ -10,7 +10,8 @@
 
 	#town - 1
 		.building - 2
-			.worker - 5
+			.worker_slot - 1 through 8
+				.worker - 5
 		.building:hover - 3
 		
 	#ocean - 1, 16 when highlighting it for the lighthouse
@@ -378,6 +379,34 @@ p {
 	height: 27px;
 	background-size: contain;
 }
+.player_board .pay_for {
+	top: 77px;
+	width: 77px;
+	height: 48px;
+}
+.pay_for_selectable:hover {
+	cursor: pointer;
+}
+.pay_for_selectable:hover div {
+	box-shadow: 0 0 10px 5px yellow; /*x-offset, y-offset, blur-radius, spread, color*/
+}
+.pay_for div {
+	width: 63px;
+	height: 16px;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+	border-radius: 8px;
+}
+#pay_for_food {
+	left: -5px;
+}
+#pay_for_wood {
+	left: 73px;
+}
+
 
 #my_player_board {
 	width: 345px;

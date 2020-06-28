@@ -71,6 +71,57 @@
 }
 
 
+/* initial resources ------------------------- */
+#initial_resources_popup {
+	width: 425px;
+	height: 315px;
+}
+#initial_resources_popup img {
+	height: 40px;
+}
+#initial_resources_popup table {
+	left: 85px;
+	top: 70px;
+	border-collapse: collapse;
+}
+#initial_resources_popup table * {
+	position: relative;
+}
+#initial_resources_popup td {
+	padding: 0 15px 20px 15px; 
+}
+#starting_quantities {
+	background-color: lightblue;
+	border: 4px solid royalblue;
+}
+#starting_quantities td {
+	padding: 10px;
+}
+#starting_quantities td * {
+	display: inline-block;
+}
+#starting_quantities td p {
+	transform: translate(0, -10px);
+}
+#starting_quantities td div * {
+	display: block;
+}
+#quantity_sign {
+	top: 190px;
+}
+#starting_total_p {
+	top: 255px;
+	left: 185px;
+	text-align: center;
+}
+#ready_button {
+	top: 300px;
+	left: 0;
+	right: 0;
+	margin: auto;
+	font-size: 24px;
+}
+
 /* sell whale popup ------------------------*/
 
 #sell_whale_popup {

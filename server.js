@@ -7,9 +7,6 @@ Currently easy to mistype your name when reentering, make that better - low prio
 Why is 'name' in the global scope being assigned a player name? Why is 'name' even in the global scope? 
 For 2 player game, don't include 3-4 player buildings
 
-From client-side, as soon as something is sent to the server, disable all buildings by setting my_name=false and calling updateSelectableBuildings()
-
-Fix it so that clicking on any of a buildings children will activate the building
 
 FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
 
@@ -55,10 +52,10 @@ class Player {
 		this.workers_at = ["player_board", "player_board"]; //can contain "player_board" or building names
 		this.small_ship = new Ship(name, "small_ship");
 		this.big_ship = new Ship(name, "big_ship");
-		this.food = 20;
-		this.wood = 20;
-		this.brick = 20;
-		this.money = 20;
+		this.food = 0;
+		this.wood = 0;
+		this.brick = 0;
+		this.money = 0;
 		
 		this.right_whales = 0;
 		this.bowhead_whales = 0;
@@ -255,6 +252,10 @@ class Game {
 		this.worker_cycle = 0; //0 or 1, depending on if players are placing their first or second player
 		this.round = 1;
 		
+		this.need_initial_resources = this.players.slice(); //people we're still waiting on to give us their initial resources
+		
+		this.pay_for_used = false; //whether the current player has already used their "pay 3 money for 2 food/wood" option this turn
+		
 		this.inn_player = undefined; //If someone places a worker on the inn, this changes to their name. Examined in this.nextTurn() to see whether to do an inn phase
 		this.inn_phase_active = false;
 		//this.inn_workers_placed = 0; //increments each time the inn_player uses a worker in the inn phase, when it gets to 2,
@@ -280,6 +281,7 @@ class Game {
 	}
 	nextTurn(){
 		this.current_player++;
+		this.pay_for_used = false;
 		
 		if(this.current_player >= this.players.length){
 			if(this.worker_cycle == 0){
@@ -634,11 +636,42 @@ io.on("connection", function(socket) {
 		
 		game = new Game(game_players);
 		
+		//tell clients to start the game
 		io.sockets.emit("start_game", players, game);
+		
+		//now wait for players to choose initial resources before telling them to set first player's turn
+		//note: initGameDisplay() (update.js) checks that the length of game.need_initial_resources is 0 before setting a turn
+		//if it isn't 0 and the player hasn't yet chosen their starting resources, it will automatically bring up the choose initial resources screen
 	});
 	
-	socket.on("initial_resources", function(){
+	socket.on("initial_resources", function(resources){
+		let name = id_to_name[socket.id];
+		let idx = game.need_initial_resources.indexOf(name);
+		if(idx == -1){return;}
 		
+		//give it to the players
+		game.need_initial_resources.splice(idx, 1);
+		for(let resource in resources){
+			players[name][resource] = resources[resource];
+		}
+		queue.add(function(){
+			io.sockets.emit("give", name, resources, undefined);
+			console.log("queue emitting give initial resources to " + name);
+		});
+		
+		console.log("waiting for initial resources from: ", game.need_initial_resources);
+		
+		if(game.need_initial_resources.length == 0){
+			//set it to first player's turn
+			queue.add(function(){
+				io.sockets.emit("banner", "Round 1: Action Phase");
+				console.log("queue emitting round 1 action phase banner");
+			});
+			queue.add(function(){
+				io.sockets.emit("set_turn", game.players[game.current_player]);
+				console.log("queue emitting set_turn for first player");
+			});
+		}
 	});
 	
 	socket.on("place_worker", function(building, data=undefined){ //building is a string, data is an optional object
@@ -662,6 +695,25 @@ io.on("connection", function(socket) {
 		//place worker, let the town_hall/courthouse handle the rest
 		let data = {building_to_build: building, cost: cost}
 		buildings[build_type].placeWorker(id_to_name[socket.id], data);
+	});
+	
+	socket.on("pay_for", function(resource){ //food or wood (option on the player board)
+		game.pay_for_used = true;
+		let name = id_to_name[socket.id];
+		
+		//pay money
+		queue.add(function(){
+			io.sockets.emit("pay_for", name, resource, 0);
+			players[name].money -= 3;
+			console.log("queue emitting pay_for - pay money for " + resource + " (step 0)");
+		});
+		
+		//get resources
+		queue.add(function(){
+			io.sockets.emit("pay_for", name, resource, 1);
+			players[name][resource] += 2;
+			console.log("queue emitting pay_for - get " + resource + " (step 1)");
+		});
 	});
 	
 	socket.on("choose_whale", function(idx){ //idx: idx in game.ocean.whaling_result, or undefined if passing
@@ -975,7 +1027,6 @@ function initBuildings(){
 				let value = data.food + data.wood + 2*data.brick;
 				io.sockets.emit("give", name, {money: value + 1}, "general_store");
 				players[name].money += value + 1;
-				console.log("first player");
 			});
 		},
 		function(name, data){
@@ -990,7 +1041,6 @@ function initBuildings(){
 				let value = data.food + data.wood + 2*data.brick;
 				io.sockets.emit("give", name, {money: value}, "general_store");
 				players[name].money += value;
-				console.log("later player");
 			});
 		}
 	);

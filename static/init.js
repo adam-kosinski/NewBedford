@@ -71,6 +71,11 @@ function init_game_display(players, game){
 		player_board.right_whale_counter.set(players[name].right_whales);
 		player_board.bowhead_whale_counter.set(players[name].bowhead_whales);
 		player_board.sperm_whale_counter.set(players[name].sperm_whales);
+		
+		//show correct disconnected status
+		if(!players[name].connected){
+			player_board.disconnected_div.style.display = "block";
+		}
 	}
 	
 	//display whales sitting on ships
@@ -90,57 +95,85 @@ function init_game_display(players, game){
 	
 	let general_store = new Building("general_store", 90, 120);
 	general_store.setPosition(104, 5);
-	general_store.addWorkerSlot(9, 35);
-	general_store.addWorkerSlot(55, 35);
-	general_store.addWorkerSlot(9, 73);
-	general_store.addWorkerSlot(55, 73);
+	general_store.addWorkerSlot(10, 35, 3);
+	general_store.addWorkerSlot(54, 35, 1);
+	general_store.addWorkerSlot(10, 73, 8);
+	general_store.addWorkerSlot(54, 73, 6);
+	general_store.addWorkerSlot(32, 35, 2);
+	general_store.addWorkerSlot(32, 73, 7);
+	general_store.addWorkerSlot(21, 54, 5);
+	general_store.addWorkerSlot(43, 54, 4);
 	town.appendChild(general_store.div);
 	
 	let warehouse = new Building("warehouse", 90, 120);
 	warehouse.setPosition(200, 275);
-	warehouse.addWorkerSlot(9, 20);
-	warehouse.addWorkerSlot(55, 20);
-	warehouse.addWorkerSlot(9, 57);
-	warehouse.addWorkerSlot(55, 57);
+	warehouse.addWorkerSlot(10, 20, 3);
+	warehouse.addWorkerSlot(54, 20, 1);
+	warehouse.addWorkerSlot(10, 57, 8);
+	warehouse.addWorkerSlot(54, 57, 6);
+	warehouse.addWorkerSlot(32, 20, 2);
+	warehouse.addWorkerSlot(32, 57, 7);
+	warehouse.addWorkerSlot(21, 39, 5);
+	warehouse.addWorkerSlot(43, 39, 4);
 	town.appendChild(warehouse.div);
 	
 	let forest = new Building("forest", 120, 90);
 	forest.setPosition(6, 205);
-	forest.addWorkerSlot(46, 45);
-	forest.addWorkerSlot(6, 45);
-	forest.addWorkerSlot(86, 45);
-	forest.addWorkerSlot(66, 10);
+	forest.addWorkerSlot(30, 39, 5);
+	forest.addWorkerSlot(60, 39, 4);
+	forest.addWorkerSlot(0, 39, 6);
+	forest.addWorkerSlot(90, 39, 3);
+	forest.addWorkerSlot(15, 60, 8);
+	forest.addWorkerSlot(45, 60, 7);
+	forest.addWorkerSlot(60, 3, 2);
+	forest.addWorkerSlot(90, 3, 1);
 	town.appendChild(forest.div);
 	
 	let farm = new Building("farm", 120, 90);
 	farm.setPosition(276, 105);
-	farm.addWorkerSlot(46, 45);
-	farm.addWorkerSlot(6, 45);
-	farm.addWorkerSlot(86, 45);
-	farm.addWorkerSlot(26, 10);
+	farm.addWorkerSlot(30, 39, 5);
+	farm.addWorkerSlot(60, 39, 4);
+	farm.addWorkerSlot(0, 39, 6);
+	farm.addWorkerSlot(90, 39, 3);
+	farm.addWorkerSlot(15, 60, 8);
+	farm.addWorkerSlot(45, 60, 7);
+	farm.addWorkerSlot(0, 3, 2);
+	farm.addWorkerSlot(30, 3, 1);
 	town.appendChild(farm.div);
 	
 	let town_hall = new Building("town_hall", 90, 120);
 	town_hall.setPosition(155, 140);
-	town_hall.addWorkerSlot(9, 35);
-	town_hall.addWorkerSlot(55, 35);
-	town_hall.addWorkerSlot(9, 73);
-	town_hall.addWorkerSlot(55, 73);
+	town_hall.addWorkerSlot(10, 35, 3);
+	town_hall.addWorkerSlot(54, 35, 1);
+	town_hall.addWorkerSlot(10, 73, 8);
+	town_hall.addWorkerSlot(54, 73, 6);
+	town_hall.addWorkerSlot(32, 35, 2);
+	town_hall.addWorkerSlot(32, 73, 7);
+	town_hall.addWorkerSlot(21, 54, 5);
+	town_hall.addWorkerSlot(43, 54, 4);
 	town.appendChild(town_hall.div);
 	
 	let dockyard = new Building("dockyard", 125, 90);
-	dockyard.addWorkerSlot(30, 37);
-	dockyard.addWorkerSlot(65, 37);
-	dockyard.addWorkerSlot(3, 52);
-	dockyard.addWorkerSlot(93, 52);
+	dockyard.addWorkerSlot(36, 30, 3);
+	dockyard.addWorkerSlot(65, 30, 2);
+	dockyard.addWorkerSlot(8, 30, 4);
+	dockyard.addWorkerSlot(93, 30, 1);
+	dockyard.addWorkerSlot(30, 44, 7);
+	dockyard.addWorkerSlot(59, 44, 6);
+	dockyard.addWorkerSlot(2, 44, 8);
+	dockyard.addWorkerSlot(87, 44, 5);
 	ocean.appendChild(dockyard.div);
 	
 	let city_pier = new Building("city_pier", 125, 90);
 	city_pier.setPosition(125, 0);
-	city_pier.addWorkerSlot(30, 37);
-	city_pier.addWorkerSlot(64, 37);
-	city_pier.addWorkerSlot(3, 52);
-	city_pier.addWorkerSlot(93, 52);
+	city_pier.addWorkerSlot(36, 30, 3);
+	city_pier.addWorkerSlot(65, 30, 2);
+	city_pier.addWorkerSlot(8, 30, 4);
+	city_pier.addWorkerSlot(93, 30, 1);
+	city_pier.addWorkerSlot(30, 44, 7);
+	city_pier.addWorkerSlot(59, 44, 6);
+	city_pier.addWorkerSlot(2, 44, 8);
+	city_pier.addWorkerSlot(87, 44, 5);
 	ocean.appendChild(city_pier.div);
 	
 	
@@ -277,13 +310,23 @@ function init_game_display(players, game){
 	
 	
 	//set the correct player's turn
-	if(game.inn_phase_active){
-		inn_phase_active = true;
-		setTurn(game.inn_player);
+	if(game.need_initial_resources.length == 0){
+		if(game.inn_phase_active){
+			inn_phase_active = true;
+			setTurn(game.inn_player);
+		}
+		else {
+			setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
+		}
 	}
-	else {
-		setTurn(game.players[game.current_player]); //will update selectable buildings for us (in case some aren't b/c of workers getting initialized on buildings)
+	else if(game.need_initial_resources.includes(my_name)) {
+		openPopup("initial_resources_popup");
 	}
+	
+	
+	//update pay_for_used (have to do after setting the turn since setTurn() makes pay_for_used = false
+	pay_for_used = game.pay_for_used;
+	updateSelectableBuildings();
 }
 
 
@@ -343,7 +386,9 @@ class PlayerBoard {
 				worker_1_storage: {x: 5, y: 210},
 				worker_2_storage: {x: 45, y: 210},
 				small_ship_storage: {x: 85, y: 213},
-				big_ship_storage: {x: 125, y: 208}
+				big_ship_storage: {x: 125, y: 208},
+				pay_for_food: {x: 34, y: 93},
+				pay_for_wood: {x: 112, y: 93}
 			};
 		}
 		else {
@@ -364,7 +409,9 @@ class PlayerBoard {
 				worker_1_storage: {x: 5, y: 135},
 				worker_2_storage: {x: 45, y: 135},
 				small_ship_storage: {x: 85, y: 138},
-				big_ship_storage: {x: 125, y: 133}
+				big_ship_storage: {x: 125, y: 133},
+				pay_for_food: {x: 21, y: 58},
+				pay_for_wood: {x: 70, y: 58}
 			};
 		};
 		
@@ -450,6 +497,24 @@ class PlayerBoard {
 		newWhaleCounterTable("small_ship_counters", "small_ship_", this);
 		newWhaleCounterTable("big_ship_counters", "big_ship_", this);
 		
+		
+		//pay for food/wood options
+		if(name == my_name){
+			
+			this.pay_for_food = document.createElement("div");
+			this.pay_for_food.id = "pay_for_food";
+			this.pay_for_food.className = "pay_for";
+			let f_highlighter = document.createElement("div");
+			this.pay_for_food.appendChild(f_highlighter);
+			this.div.appendChild(this.pay_for_food);
+			
+			this.pay_for_wood = document.createElement("div");
+			this.pay_for_wood.id = "pay_for_wood";
+			this.pay_for_wood.className = "pay_for";
+			let w_highlighter = document.createElement("div");
+			this.pay_for_wood.appendChild(w_highlighter);
+			this.div.appendChild(this.pay_for_wood);
+		}
 		
 		//add to DOM
 		player_board_container.appendChild(this.div);

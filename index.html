@@ -82,6 +82,54 @@
 			
 			<!--Popups-->
 			
+			<div id="initial_resources_popup" class="popup">
+				<!-- this one's not closable by the user, no x-button -->
+				<p>Pick starting resources, must add to $5:</p>
+				<table>
+					<tbody>
+						<tr>
+							<td><img src="/static/images/food_3d.png"/><p>$1</p></td>
+							<td><img src="/static/images/wood_3d.png"/><p>$1</p></td>
+							<td><img src="/static/images/brick_3d.png"/><p>$2</p></td>
+							<td><img src="/static/images/small_coin_front.png"/><p>$1</p></td>
+						</tr>
+						<tr id="starting_quantities">
+							<td>
+								<p id="starting_food">0</p>
+								<div class="plus_minus starting">
+									<div id="starting_food_plus" class="plus">+</div>
+									<div id="starting_food_minus" class="minus">-</div>
+								</div>
+							</td>
+							<td>
+								<p id="starting_wood">0</p>
+								<div class="plus_minus starting">
+									<div id="starting_wood_plus" class="plus">+</div>
+									<div id="starting_wood_minus" class="minus">-</div>
+								</div>
+							</td>
+							<td>
+								<p id="starting_brick">0</p>
+								<div class="plus_minus starting">
+									<div id="starting_brick_plus" class="plus">+</div>
+									<div id="starting_brick_minus" class="minus">-</div>
+								</div>
+							</td>
+							<td>
+								<p id="starting_money">0</p>
+								<div class="plus_minus starting">
+									<div id="starting_money_plus" class="plus">+</div>
+									<div id="starting_money_minus" class="minus">-</div>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<p id="quantity_sign">Qty:</p>
+				<p id="starting_total_p">Total: $<span id="starting_total">0</span></p>
+				<button id="ready_button" disabled>Ready!</button>
+			</div>
+			
 			<div id="sell_whale_popup" class="popup">
 				<!-- this one's not closable by the user, no x-button -->
 				<p id="whale_seller_name"></p>

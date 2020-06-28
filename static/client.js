@@ -212,6 +212,10 @@ socket.on("end_inn_phase", function(){
 	socket.emit("done");
 });
 
+socket.on("pay_for", function(name, resource, step){
+	payFor(name, resource, step); //update.js
+});
+
 socket.on("banner", function(message){
 	banner.textContent = message;
 	banner.style.display = "block";
@@ -253,6 +257,7 @@ socket.on("clear_game", function(){
 	animation_in_progress = false; //click event handlers only run when this is false
 	my_turn = false;
 	returning_whale = false;
+	pay_for_used = false;
 
 	town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet
 		x_min: 376,

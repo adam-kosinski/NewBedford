@@ -511,6 +511,9 @@ ocean.addEventListener("click", function(e){
 		if(getNumberOfShipsAtDistance(e.target.distance + 1) >= 3){
 			alert("The next row is full, you can't move your ship there.");
 		}
+		else if(e.target.distance >= 6){
+			alert("This ship is at distance 6, it can't be moved out further");
+		}
 		else {
 			hideLighthouseScreen();
 			ocean.style.cursor = "";
@@ -523,6 +526,9 @@ ocean.addEventListener("click", function(e){
 	else if(lighthouse_screen_open && e.target == player_boards[my_name].big_ship && e.target.distance != undefined){
 		if(getNumberOfShipsAtDistance(e.target.distance + 1) >= 3){
 			alert("The next row is full, you can't move your ship there.");
+		}
+		else if(e.target.distance >= 6){
+			alert("This ship is at distance 6, it can't be moved out further");
 		}
 		else {
 			hideLighthouseScreen();

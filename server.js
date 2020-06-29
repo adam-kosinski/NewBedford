@@ -8,7 +8,13 @@ Why is 'name' in the global scope being assigned a player name? Why is 'name' ev
 For 2 player game, don't include 3-4 player buildings
 
 
-FIX INCORRECT NUMBER OF BUILDING SLOTS FOR TOWN BUILDINGS - should be 8, not 4
+Preload all the images so we don't have to send a GET request each time a new image is needed (which causes an annoying render delay)
+
+Lighthouse allows you to move a ship on the 6th row I think
+
+Bug with lighthouse 3rd priority 4th row -> 1st priority 5th row, left a function in the queue
+Same with different distances
+No bug when followed directly by the inn though
 
 */
 
@@ -125,7 +131,10 @@ class Building {
 			this.normal_function(name, data);
 		}
 		
-		game.nextTurn();
+		//next turn
+		queue.add(function(){
+			game.nextTurn();
+		}, true);
 	}
 }
 
@@ -974,7 +983,8 @@ function process_queue(){
 		
 		//fill up busy_clients if we require a done event returned
 		if(!action.done_not_required){
-			for(let name in players){
+			for(let i=0; i<game.players.length; i++){ //only require done from game players, not spectators
+				let name = game.players[i];
 				if(players[name].connected){
 					busy_clients.push(name);
 				}
@@ -1269,6 +1279,10 @@ function initBuildings(){
 		//if any ships in previous row at lower priority (larger priority number), move them over to the left one
 		let prev_row = game.ocean.getShips(start_dist); //won't include ship we're moving to sea, b/c we've already changed its state
 		console.log("prev_row", prev_row);
+		//filter out higher priority ships that don't need to get moved
+		prev_row = prev_row.filter(ship => ship.priority > start_priority);
+		console.log("prev_row to move", prev_row);
+		
 		if(prev_row.length > 0){
 			queue.add(function(){
 				for(let i=0; i<prev_row.length; i++){

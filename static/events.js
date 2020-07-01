@@ -31,7 +31,7 @@ document.addEventListener("click", function(e){
 	
 	console.log(e.pageX, e.pageY);
 	
-	if(!pay_for_used && !animation_in_progress){
+	if(my_turn && !pay_for_used && !animation_in_progress){
 		if(e.target.id == "pay_for_food" || (e.target.parentElement && e.target.parentElement.id == "pay_for_food")){
 			//check if have enough money
 			let n_money = Number(player_boards[my_name].money_counter.textContent);

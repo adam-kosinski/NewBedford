@@ -40,7 +40,7 @@ function getLocation(what, relative_to, name=undefined, use_center=false){
 			y: (building_box.y + 0.5*building_box.height) - relative_to_box.y
 		};
 	}
-	else { //on playerboard
+	else if(player_boards[name].location.hasOwnProperty(what)){
 		let player_board_box = player_boards[name].div.getBoundingClientRect();
 		let relative_to_box = relative_to.getBoundingClientRect();
 		let local_pos = player_boards[name].location[what];
@@ -49,6 +49,9 @@ function getLocation(what, relative_to, name=undefined, use_center=false){
 			x: (player_board_box.x + local_pos.x) - relative_to_box.x,
 			y: (player_board_box.y + local_pos.y) - relative_to_box.y
 		};
+	}
+	else {
+		throw new Error(what + " is an invalid 'what' argument for getLocation()");
 	}
 }
 

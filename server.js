@@ -10,11 +10,8 @@ For 2 player game, don't include 3-4 player buildings
 
 Preload all the images so we don't have to send a GET request each time a new image is needed (which causes an annoying render delay)
 
-Lighthouse allows you to move a ship on the 6th row I think
 
-Bug with lighthouse 3rd priority 4th row -> 1st priority 5th row, left a function in the queue
-Same with different distances
-No bug when followed directly by the inn though
+Bug with hovering over the choose whale sign makes it disappear, also had a ton of queue (4) at the time
 
 */
 
@@ -580,6 +577,7 @@ io.on("connection", function(socket) {
 	
 	//when a new player joins, check if player exists. If they don't, create new player. If they do, only allow join if that player was disconnected
 	socket.on("new player", function(name, callback){
+			
 		if(!players.hasOwnProperty(name)){
 			if(game != undefined){return;} //don't count spectators as players. If the game ends, they can refresh and join as a player
 			
@@ -629,8 +627,8 @@ io.on("connection", function(socket) {
 	});
 	
 	socket.on("start_game", function(){
-		//consider putting players in a room? - prob. not, I'll have spectator players for now
-		//consider having a moderator who advances through the phases?
+		if(game !=undefined){return;} //don't let multiple games happen
+		
 		console.log("starting game");
 		
 		let game_players = Object.keys(players).filter(name => players[name].connected);
@@ -905,6 +903,8 @@ io.on("connection", function(socket) {
 	});
 	
 	socket.on("clear_game", function(){
+		
+		if(game == undefined){return;} //don't clear multiple times
 		
 		game = undefined;
 		queue.splice(0); //don't set it to a new array b/c the old one had the 'add' method attached to it

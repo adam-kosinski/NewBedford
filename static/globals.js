@@ -63,7 +63,8 @@ let inn_phase_active = false; //used by updateSelectableBuildings(), if true onl
 let round = 1;
 let animation_in_progress = false; //click event handlers only run when this is false
 let my_turn = false;
-let returning_whale = false; //used to prevent multiple-clicks for returning a whale
+let returning_whale = false; //used to prevent multiple clicks for returning a whale
+let whale_bought_or_passed = true; //used to prevent multiple clicks for buying/passing on a whale
 let pay_for_used = false; //whether the current player has already used their "pay 3 money for 2 food/wood" option this turn
 
 let town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet

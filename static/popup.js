@@ -274,6 +274,8 @@ document.addEventListener("click", function(e){
 				if(yes_build){
 					socket.emit("build", building_to_build, build_type, getBuildingCost(building_to_build));
 					closePopups();
+					my_turn = false;
+					updateSelectableBuildings();
 				}
 			}
 			else {
@@ -320,8 +322,12 @@ document.addEventListener("click", function(e){
 		if(canPlayerBuild(my_name, building_to_build, discount)){
 			console.log("building", building_to_build);
 			console.log("discount", discount);
+			
 			let cost = getBuildingCost(building_to_build, discount);
 			socket.emit("build", building_to_build, build_type, cost);
+			
+			my_turn = false;
+			updateSelectableBuildings();
 			closePopups();
 		}
 		else {

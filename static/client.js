@@ -171,6 +171,8 @@ socket.on("pay_whale_seller", function(name, which_ship, whale_type){
 });
 
 socket.on("sell_whale_popup", function(seller, whale_type, buyer){
+	whale_bought_or_passed = false;
+	
 	whale_seller = seller;
 	whale_to_sell = whale_type;
 	whale_buyer = buyer;
@@ -257,6 +259,7 @@ socket.on("clear_game", function(){
 	animation_in_progress = false; //click event handlers only run when this is false
 	my_turn = false;
 	returning_whale = false;
+	whale_bought_or_passed = true;
 	pay_for_used = false;
 
 	town_bounding_box = { //initialize explicitly w/o the function b/c when loading the page sizes haven't been established yet

@@ -362,6 +362,14 @@ ocean.addEventListener("click",function(e){
 	}
 	
 	let idx = Number(e.target.id.match(/\d+/)[0]);
+	
+	//immediately make whales non-selectable, in case lag allows a second click
+	choose_whale_sign.style.display = "none";
+	let whales = document.getElementsByClassName("whale");
+	for(let i=0; i<whales.length; i++){
+		whales[i].classList.remove("selectable");
+	}
+	
 	console.log("choose whale", idx);
 	socket.emit("choose_whale", idx);
 });
@@ -371,6 +379,14 @@ ocean.addEventListener("click",function(e){
 //Event listener for passing on choosing whales (if can't or if don't want to)
 
 choose_whale_pass_button.addEventListener("click", function(e){
+	
+	//immediately make whales non-selectable, in case lag allows a second click
+	choose_whale_sign.style.display = "none";
+	let whales = document.getElementsByClassName("whale");
+	for(let i=0; i<whales.length; i++){
+		whales[i].classList.remove("selectable");
+	}
+	
 	socket.emit("choose_whale", undefined);
 });
 
@@ -394,7 +410,6 @@ document.addEventListener("click", function(e){
 	}
 	else {
 		//return the whale
-		returning_whale = true; //prevent problems with rapid clicking
 		
 		let cost = whale_costs[whale_type];
 		let n_money = Number(player_boards[my_name].money_counter.textContent);
@@ -403,6 +418,8 @@ document.addEventListener("click", function(e){
 			alert("You don't have enough money to return this whale");
 			return;
 		}
+		
+		returning_whale = true; //prevent problems with rapid clicking
 		
 		console.log("return",whale_type);
 		socket.emit("return_whale", whale_type, cost);
@@ -414,6 +431,8 @@ document.addEventListener("click", function(e){
 //Event listeners for buying a whale
 
 document.getElementById("buy_whale_buttons").addEventListener("click", function(e){
+	if(whale_bought_or_passed){return;}
+	
 	if(e.target.id == "buy_whale_button"){
 		console.log("buy");
 		
@@ -425,9 +444,11 @@ document.getElementById("buy_whale_buttons").addEventListener("click", function(
 			return;
 		}
 		
+		whale_bought_or_passed = true;
 		socket.emit("buy_whale", true);
 	}
 	else if(e.target.id == "no_buy_whale_button"){
+		whale_bought_or_passed = true;
 		console.log("pass");
 		socket.emit("buy_whale", false);
 	}

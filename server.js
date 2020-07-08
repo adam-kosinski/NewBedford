@@ -253,7 +253,15 @@ class Ocean { //TODO: fix counts
 
 class Game {
 	constructor(players){ //players is an array of player names
-		this.players = players; //first player for the round is the first in this list
+		this.players = []; //first player for the round is the first in this list
+				
+		//populate this.players by shuffling players
+		for(let i=0, len=players.length; i<len; i++){
+			let idx = Math.floor(Math.random()*players.length);
+			let name = players.splice(idx, 1)[0];
+			this.players.push(name);
+		}
+				
 		this.current_player = 0; //whose turn it currently is, index referencing this.players
 		this.worker_cycle = 0; //0 or 1, depending on if players are placing their first or second player
 		this.round = 1;
